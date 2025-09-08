@@ -8,19 +8,36 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; overflow: hidden; }
-        #pdf-canvas { width: 100%; height: 100%; }
+        body { font-family: 'Inter', sans-serif; }
+        /* The main container for the presentation */
         #presenter-container {
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            max-width: 1200px; /* A reasonable max width */
+            margin: 2rem auto; /* Center it on the page with margin */
+            background-color: #1f2937; /* bg-gray-800 */
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            /* Use aspect-ratio for a consistent 16:9 presentation shape */
+            aspect-ratio: 16 / 9;
             display: flex;
             flex-direction: column;
+            position: relative; /* Needed for absolute positioning of the fullscreen button */
+        }
+        /* The canvas will be centered within its container */
+        #pdf-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden; /* Hide any overflow */
+        }
+        #pdf-canvas {
+            border-radius: 0.25rem; /* A subtle rounding */
         }
     </style>
 </head>
-<body class="bg-gray-800 text-white flex items-center justify-center">
+<body class="bg-gray-200">
     <div id="presenter-container">
-        <div id="loading-message" class="flex flex-col items-center justify-center h-full">
+        <div id="loading-message" class="flex flex-col items-center justify-center h-full text-white">
             <svg class="animate-spin h-10 w-10 text-white mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -32,12 +49,12 @@
              <p class="text-xl text-red-400">Could not load presentation. It may have expired or the link is invalid.</p>
         </div>
         
-        <div id="pdf-container" class="hidden flex-grow relative">
+        <div id="pdf-container" class="hidden flex-grow items-center justify-center">
             <canvas id="pdf-canvas"></canvas>
-            <button id="fullscreen-btn" class="absolute bottom-4 right-4 bg-gray-900 bg-opacity-50 hover:bg-opacity-75 text-white font-bold p-3 rounded-full transition duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-            </button>
         </div>
+         <button id="fullscreen-btn" class="absolute bottom-4 right-4 bg-gray-900 bg-opacity-50 hover:bg-opacity-75 text-white font-bold p-3 rounded-full transition duration-300">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+        </button>
     </div>
 
     <script type="module">
@@ -70,18 +87,33 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
 
         function renderPage(num) {
+            if (!pdfDoc) return;
             pdfDoc.getPage(num).then(function(page) {
-                const viewport = page.getViewport({ scale: 1.5 });
                 const container = presenterContainer;
-                const scale = Math.min(container.clientWidth / viewport.width, container.clientHeight / viewport.height);
-                const scaledViewport = page.getViewport({ scale: scale * 0.95 });
 
-                canvas.height = scaledViewport.height;
-                canvas.width = scaledViewport.width;
+                // Get viewport at scale 1 to determine aspect ratio
+                const viewport = page.getViewport({ scale: 1 });
+                
+                // Calculate scale to fit the container while maintaining aspect ratio
+                const scale = Math.min(container.clientHeight / viewport.height, container.clientWidth / viewport.width) * 0.98; // 2% padding
+                const scaledViewport = page.getViewport({ scale: scale });
 
+                // --- HIGH-RESOLUTION RENDERING FIX ---
+                const devicePixelRatio = window.devicePixelRatio || 1;
+
+                // Set the canvas backing store size to match the high-res screen
+                canvas.width = Math.floor(scaledViewport.width * devicePixelRatio);
+                canvas.height = Math.floor(scaledViewport.height * devicePixelRatio);
+                
+                // Set the display size of the canvas
+                canvas.style.width = `${Math.floor(scaledViewport.width)}px`;
+                canvas.style.height = `${Math.floor(scaledViewport.height)}px`;
+                
                 const renderContext = {
                     canvasContext: ctx,
-                    viewport: scaledViewport
+                    viewport: scaledViewport,
+                    // Apply the device pixel ratio scaling during rendering for clarity
+                    transform: [devicePixelRatio, 0, 0, devicePixelRatio, 0, 0]
                 };
                 page.render(renderContext);
             });
@@ -95,19 +127,16 @@
         if (presentationId) {
             const docRef = doc(db, "presentations", presentationId);
 
-            // Listen for real-time updates on the document
             const unsubscribe = onSnapshot(docRef, (doc) => {
                 if (doc.exists()) {
                     const data = doc.data();
                     
-                    // If pdfDoc is not loaded yet, load it
                     if (!pdfDoc) {
                         const url = data.fileUrl;
                         const loadingTask = pdfjsLib.getDocument(url);
                         loadingTask.promise.then(function(pdfDoc_) {
                             pdfDoc = pdfDoc_;
                             
-                            // *** NEW: Get total pages and update the database ***
                             const totalPages = pdfDoc.numPages;
                             updateDoc(docRef, { totalPages: totalPages })
                                 .catch(err => console.error("Could not update total pages:", err));
@@ -122,7 +151,6 @@
                         });
                     }
 
-                    // If the currentPage changes, render the new page
                     if (pageNum !== data.currentPage) {
                         renderPage(data.currentPage);
                     }
@@ -156,6 +184,15 @@
              if (pdfDoc) {
                 renderPage(pageNum);
             }
+        });
+
+        // Re-render when entering/exiting fullscreen as container size changes
+        document.addEventListener('fullscreenchange', () => {
+            setTimeout(() => {
+                if (pdfDoc) {
+                    renderPage(pageNum);
+                }
+            }, 100); // A small delay to allow the browser to resize
         });
     </script>
 </body>
