@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presenter View</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PDF.js library from Mozilla -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #111827; /* Dark background for presentations */
+        }
+        #pdf-canvas {
+            border: 1px solid #374151;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            max-width: 95vw;
+            max-height: 85vh;
+            object-fit: contain;
+        }
+        #page-info {
+            position: absolute;
+            bottom: 10px;
+            color: white;
+            background-color: rgba(0,0,0,0.7);
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-family: sans-serif;
+        }
+        #fullscreen-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background-color: rgba(0,0,0,0.7);
+            border: none;
+            border-radius: 50%;
+            padding: 10px;
+            cursor: pointer;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loading" class="text-white text-2xl">Loading Presentation...</div>
+
+    <canvas id="pdf-canvas" class="hidden"></canvas>
+    
+    <div id="page-info" class="hidden">
+        Page <span id="page-num"></span> of <span id="page-count"></span>
+    </div>
+    
+    <!-- Fullscreen Button -->
+    <button id="fullscreen-btn" title="Toggle Fullscreen">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+    </button>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+  apiKey: "AIzaSyCtlgsNhCEsKLHA-WmfoqQleW_n2kCQerI",
+  authDomain: "slidechangeronline.firebaseapp.com",
+  projectId: "slidechangeronline",
+  storageBucket: "slidechangeronline.firebasestorage.app",
+  messagingSenderId: "1013262596418",
+  appId: "1:1013262596418:web:b7c9ee7e6da7545ff370db"
+};
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // --- PDF.js Setup ---
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
+        const canvas = document.getElementById('pdf-canvas');
+        const ctx = canvas.getContext('2d');
+        let pdfDoc = null; 
+
+        // --- UI Elements ---
+        const loadingMessage = document.getElementById('loading');
+        const pageInfo = document.getElementById('page-info');
+        const pageNumSpan = document.getElementById('page-num');
+        const pageCountSpan = document.getElementById('page-count');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+
+        // --- Main Logic ---
+        const params = new URLSearchParams(window.location.search);
+        const presentationId = params.get('id');
+
+        if (!presentationId) {
+            loadingMessage.textContent = "Error: No presentation ID found in URL.";
+        } else {
+            const docRef = doc(db, "presentations", presentationId);
+
+            onSnapshot(docRef, (docSnap) => {
+                if (!docSnap.exists()) {
+                    loadingMessage.textContent = "Error: Presentation not found or has expired.";
+                    return;
+                }
+
+                const data = docSnap.data();
+                const currentPage = data.currentPage;
+
+                if (!pdfDoc) {
+                    loadPdf(data.fileUrl, currentPage);
+                } else {
+                    renderPage(currentPage);
+                }
+            });
+        }
+
+        async function loadPdf(pdfUrl, initialPage) {
+            try {
+                // We no longer need the proxy. We can use the direct URL.
+                pdfDoc = await pdfjsLib.getDocument(pdfUrl).promise;
+                
+                loadingMessage.classList.add('hidden');
+                canvas.classList.remove('hidden');
+                pageInfo.classList.remove('hidden');
+                pageCountSpan.textContent = pdfDoc.numPages;
+
+                renderPage(initialPage);
+            } catch (error) {
+                console.error("Error loading PDF:", error);
+                loadingMessage.textContent = "Error loading PDF. Please ensure the file is valid.";
+            }
+        }
+
+        async function renderPage(num) {
+            if (!pdfDoc || num < 1 || num > pdfDoc.numPages) return;
+
+            const page = await pdfDoc.getPage(num);
+            const viewport = page.getViewport({ scale: 2.0 });
+
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            const renderContext = {
+                canvasContext: ctx,
+                viewport: viewport
+            };
+            await page.render(renderContext).promise;
+
+            pageNumSpan.textContent = num;
+        }
+
+        // --- Fullscreen Logic ---
+        fullscreenBtn.addEventListener('click', toggleFullScreen);
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+    </script>
+</body>
+</html>
+

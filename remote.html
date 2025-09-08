@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remote Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-200">
+
+    <div class="flex flex-col items-center justify-center min-h-screen p-4 text-center">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Remote Control</h1>
+        <p id="status" class="text-gray-600 mb-8">Connecting...</p>
+
+        <div id="controls" class="hidden w-full max-w-sm">
+            <div class="mb-6">
+                <p class="text-lg">Page <span id="current-page-display" class="font-bold">1</span></p>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <button id="prev-btn" class="bg-gray-800 text-white font-bold py-6 px-4 rounded-lg text-2xl shadow-lg transform active:scale-95 transition-transform">
+                    &larr; Prev
+                </button>
+                <button id="next-btn" class="bg-indigo-600 text-white font-bold py-6 px-4 rounded-lg text-2xl shadow-lg transform active:scale-95 transition-transform">
+                    Next &rarr;
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, doc, getDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+  apiKey: "AIzaSyCtlgsNhCEsKLHA-WmfoqQleW_n2kCQerI",
+  authDomain: "slidechangeronline.firebaseapp.com",
+  projectId: "slidechangeronline",
+  storageBucket: "slidechangeronline.firebasestorage.app",
+  messagingSenderId: "1013262596418",
+  appId: "1:1013262596418:web:b7c9ee7e6da7545ff370db"
+};
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // --- UI Elements ---
+        const statusEl = document.getElementById('status');
+        const controlsEl = document.getElementById('controls');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const pageDisplay = document.getElementById('current-page-display');
+
+        // --- Main Logic ---
+        const params = new URLSearchParams(window.location.search);
+        const presentationId = params.get('id');
+        let docRef;
+
+        if (!presentationId) {
+            statusEl.textContent = "Error: No presentation ID found in URL.";
+        } else {
+            docRef = doc(db, "presentations", presentationId);
+            statusEl.textContent = 'Connected!';
+            controlsEl.classList.remove('hidden');
+
+            // Listen for changes to show the current page number
+            onSnapshot(docRef, (doc) => {
+                if (doc.exists()) {
+                    pageDisplay.textContent = doc.data().currentPage;
+                }
+            });
+        }
+
+        // --- Button Click Handlers ---
+        prevBtn.addEventListener('click', () => changePage(-1));
+        nextBtn.addEventListener('click', () => changePage(1));
+
+        async function changePage(direction) {
+            if (!docRef) return;
+
+            // Disable buttons to prevent multiple clicks
+            prevBtn.disabled = true;
+            nextBtn.disabled = true;
+
+            try {
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const current = docSnap.data().currentPage;
+                    const newPage = current + direction;
+
+                    // Basic validation: don't go below page 1 (we don't know the max page here)
+                    if (newPage > 0) {
+                        await updateDoc(docRef, { currentPage: newPage });
+                    }
+                }
+            } catch (error) {
+                console.error("Error changing page: ", error);
+            } finally {
+                // Re-enable buttons
+                prevBtn.disabled = false;
+                nextBtn.disabled = false;
+            }
+        }
+
+    </script>
+</body>
+</html>
