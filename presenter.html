@@ -9,29 +9,28 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
-        /* The main container for the presentation */
         #presenter-container {
             width: 100%;
-            max-width: 1200px; /* A reasonable max width */
-            margin: 2rem auto; /* Center it on the page with margin */
-            background-color: #1f2937; /* bg-gray-800 */
+            max-width: 1200px;
+            margin: 2rem auto;
+            background-color: #1f2937;
             border-radius: 0.5rem;
             box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-            /* Use aspect-ratio for a consistent 16:9 presentation shape */
             aspect-ratio: 16 / 9;
             display: flex;
             flex-direction: column;
-            position: relative; /* Needed for absolute positioning of the fullscreen button */
+            position: relative;
         }
-        /* The canvas will be centered within its container */
         #pdf-container {
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden; /* Hide any overflow */
+            overflow: hidden;
         }
         #pdf-canvas {
-            border-radius: 0.25rem; /* A subtle rounding */
+            border-radius: 0.25rem;
+            /* NEW: Added for smooth page transitions */
+            transition: opacity 0.3s ease-in-out;
         }
     </style>
 </head>
@@ -83,40 +82,53 @@
         
         let pdfDoc = null;
         let pageNum = 1;
+        let isRendering = false; // Prevent multiple renders at once
 
         pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
 
         function renderPage(num) {
-            if (!pdfDoc) return;
-            pdfDoc.getPage(num).then(function(page) {
-                const container = presenterContainer;
+            if (!pdfDoc || isRendering) return;
+            isRendering = true;
 
-                // Get viewport at scale 1 to determine aspect ratio
-                const viewport = page.getViewport({ scale: 1 });
-                
-                // Calculate scale to fit the container while maintaining aspect ratio
-                const scale = Math.min(container.clientHeight / viewport.height, container.clientWidth / viewport.width) * 0.98; // 2% padding
-                const scaledViewport = page.getViewport({ scale: scale });
+            // Fade out for transition
+            canvas.style.opacity = 0;
 
-                // --- HIGH-RESOLUTION RENDERING FIX ---
-                const devicePixelRatio = window.devicePixelRatio || 1;
+            setTimeout(() => { // Allow fade-out to happen
+                pdfDoc.getPage(num).then(function(page) {
+                    const container = presenterContainer;
+                    const viewport = page.getViewport({ scale: 1 });
+                    const scale = Math.min(container.clientHeight / viewport.height, container.clientWidth / viewport.width) * 0.98;
+                    const scaledViewport = page.getViewport({ scale: scale });
+                    const devicePixelRatio = window.devicePixelRatio || 1;
 
-                // Set the canvas backing store size to match the high-res screen
-                canvas.width = Math.floor(scaledViewport.width * devicePixelRatio);
-                canvas.height = Math.floor(scaledViewport.height * devicePixelRatio);
-                
-                // Set the display size of the canvas
-                canvas.style.width = `${Math.floor(scaledViewport.width)}px`;
-                canvas.style.height = `${Math.floor(scaledViewport.height)}px`;
-                
-                const renderContext = {
-                    canvasContext: ctx,
-                    viewport: scaledViewport,
-                    // Apply the device pixel ratio scaling during rendering for clarity
-                    transform: [devicePixelRatio, 0, 0, devicePixelRatio, 0, 0]
-                };
-                page.render(renderContext);
-            });
+                    canvas.width = Math.floor(scaledViewport.width * devicePixelRatio);
+                    canvas.height = Math.floor(scaledViewport.height * devicePixelRatio);
+                    canvas.style.width = `${Math.floor(scaledViewport.width)}px`;
+                    canvas.style.height = `${Math.floor(scaledViewport.height)}px`;
+                    
+                    const renderContext = {
+                        canvasContext: ctx,
+                        viewport: scaledViewport,
+                        transform: [devicePixelRatio, 0, 0, devicePixelRatio, 0, 0]
+                    };
+                    
+                    const renderTask = page.render(renderContext);
+                    renderTask.promise.then(() => {
+                        // Fade in new page
+                        canvas.style.opacity = 1;
+
+                        // *** NEW: Generate preview for remote ***
+                        // Use a short delay to ensure the canvas is painted
+                        setTimeout(() => {
+                            const previewImage = canvas.toDataURL('image/jpeg', 0.4); // Low quality for speed
+                            const docRef = doc(db, "presentations", presentationId);
+                            updateDoc(docRef, { previewImage: previewImage });
+                        }, 100);
+
+                        isRendering = false;
+                    });
+                });
+            }, 300); // Match CSS transition time
             pageNum = num;
         }
         
@@ -186,13 +198,12 @@
             }
         });
 
-        // Re-render when entering/exiting fullscreen as container size changes
         document.addEventListener('fullscreenchange', () => {
             setTimeout(() => {
                 if (pdfDoc) {
                     renderPage(pageNum);
                 }
-            }, 100); // A small delay to allow the browser to resize
+            }, 100);
         });
     </script>
 </body>
