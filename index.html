@@ -3,100 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SlideChangerOnline - Your Remote PDF Presenter</title>
+    <title>SlideChangerOnline</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Roboto', sans-serif;
-        }
-        .cambria-font {
-            font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
-        }
+        body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
 
-    <div class="flex flex-col items-center justify-center min-h-screen p-4">
+    <div class="w-full max-w-2xl mx-auto p-8 text-center">
+        <!-- Main Content Area -->
+        <div id="main-content">
+            <h1 class="text-5xl font-bold mb-2">SlideChangerOnline</h1>
+            <p class="text-lg text-gray-400 mb-8">The easiest way to present your PDFs, remotely.</p>
 
-        <!-- Main Card -->
-        <div class="w-full max-w-2xl bg-white rounded-2xl shadow-2xl p-8 md:p-12 text-center">
-
-            <header class="mb-8">
-                <h1 class="cambria-font text-5xl font-bold text-gray-900">
-                    SlideChangerOnline
-                </h1>
-                <p class="text-gray-500 mt-2">The easiest way to present your PDFs, remotely.</p>
-            </header>
-
-            <div id="user-info" class="hidden mb-4">
-                <p id="welcome-message" class="text-lg"></p>
-                <button id="signout-btn" class="mt-2 text-sm text-indigo-600 hover:underline">Sign Out</button>
-            </div>
-
-            <div id="upload-section" class="hidden mb-8">
-                <p class="mb-4 text-lg">You're signed in! Upload your PDF to get started.</p>
-                
-                <label for="pdf-upload" class="group cursor-pointer inline-flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105 shadow-lg">
-                    <svg class="w-6 h-6 mr-3 transform group-hover:rotate-6 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                    Choose your PDF
-                </label>
-                <input type="file" id="pdf-upload" class="hidden" accept=".pdf">
-                
-                <div id="upload-progress-container" class="hidden mt-4">
-                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                        <div id="upload-progress-bar" class="bg-indigo-600 h-2.5 rounded-full" style="width: 0%"></div>
-                    </div>
-                    <p id="upload-status" class="text-sm text-gray-600 mt-2"></p>
-                </div>
-
-                <p class="text-sm text-gray-400 mt-4">Free users can upload one file at a time (Max 10MB).</p>
-            </div>
-            
+            <!-- Auth Section -->
             <div id="auth-section">
-                 <p class="mb-4 text-lg">Please sign in with Google to continue.</p>
-                 <button id="login-btn" class="bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-8 rounded-lg transition-transform transform hover:scale-105 shadow-md inline-flex items-center">
-                    <svg class="w-6 h-6 mr-3" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C42.022,35.222,44,30.036,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
+                <p class="mb-4">Please sign in to continue.</p>
+                <button id="login-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 flex items-center justify-center mx-auto">
+                    <svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#FFFFFF"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
                     Sign In with Google
                 </button>
             </div>
 
-            <div id="links-section" class="hidden mt-10 p-6 bg-gray-50 rounded-lg border border-gray-200">
-                 <h2 class="text-2xl font-semibold mb-4 text-gray-800">Your Links are Ready!</h2>
-                 
-                 <div class="space-y-4">
-                     <div>
-                         <label class="font-medium text-gray-700 block text-left mb-1">Presenter Link (for the big screen):</label>
-                         <div class="flex items-center">
-                            <input type="text" id="presenter-link" readonly class="w-full p-2 border border-gray-300 rounded-l-md bg-gray-200 font-mono text-sm">
-                            <button id="copy-presenter" class="bg-indigo-500 text-white p-2 rounded-r-md hover:bg-indigo-600">Copy</button>
-                         </div>
-                     </div>
-                     
-                     <div>
-                         <label class="font-medium text-gray-700 block text-left mb-1">Remote Link (for your phone):</label>
-                         <div class="flex items-center">
-                             <input type="text" id="remote-link" readonly class="w-full p-2 border border-gray-300 rounded-l-md bg-gray-200 font-mono text-sm">
-                            <button id="copy-remote" class="bg-indigo-500 text-white p-2 rounded-r-md hover:bg-indigo-600">Copy</button>
-                         </div>
-                     </div>
-                 </div>
-                 <p class="text-sm text-gray-500 mt-6">These links will expire in <span id="timer" class="font-bold">10 minutes</span>.</p>
+            <!-- Logged In Section -->
+            <div id="user-section" class="hidden">
+                <p class="mb-2">Welcome, <span id="user-name" class="font-semibold"></span>!</p>
+                <button id="logout-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 mb-6 text-sm">Sign Out</button>
+                <p class="text-gray-400 mb-4">You're signed in! Upload your PDF to get started.</p>
+                <div class="bg-gray-800 border-2 border-dashed border-gray-600 rounded-lg p-10">
+                     <label for="pdf-upload" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 cursor-pointer">
+                        Choose your PDF
+                    </label>
+                    <input id="pdf-upload" type="file" class="hidden" accept=".pdf">
+                </div>
             </div>
         </div>
-        
-        <footer class="mt-8 text-center">
-            <p class="text-gray-500">© 2025 SlideChangerOnline. All Rights Reserved.</p>
-        </footer>
+
+        <!-- Uploading Section -->
+        <div id="uploading-section" class="hidden">
+            <h2 class="text-2xl font-semibold mb-4">Uploading your file...</h2>
+            <div class="w-full bg-gray-700 rounded-full h-4 mb-4">
+                <div id="progress-bar" class="bg-green-500 h-4 rounded-full" style="width: 0%"></div>
+            </div>
+            <p id="progress-text" class="text-lg">0%</p>
+        </div>
+
+        <!-- Links Section -->
+        <div id="links-section" class="hidden bg-gray-800 rounded-lg p-8">
+            <h2 class="text-2xl font-semibold mb-4">Your Links are Ready!</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-left text-gray-400 mb-1">Presenter Link (for the big screen)</label>
+                    <input id="presenter-link" type="text" readonly class="w-full bg-gray-900 text-white p-2 rounded border border-gray-600">
+                </div>
+                <div>
+                    <label class="block text-left text-gray-400 mb-1">Remote Link (for your phone)</label>
+                    <input id="remote-link" type="text" readonly class="w-full bg-gray-900 text-white p-2 rounded border border-gray-600">
+                </div>
+            </div>
+             <p class="text-sm text-gray-500 mt-4">These links will expire in 4 hours.</p>
+        </div>
     </div>
-    
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // Your web app's Firebase configuration
         const firebaseConfig = {
   apiKey: "AIzaSyCtlgsNhCEsKLHA-WmfoqQleW_n2kCQerI",
   authDomain: "slidechangeronline.firebaseapp.com",
@@ -106,128 +82,134 @@
   appId: "1:1013262596418:web:b7c9ee7e6da7545ff370db"
 };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const storage = getStorage(app);
         const db = getFirestore(app);
-        const provider = new GoogleAuthProvider();
-
-        // Get UI elements
-        const loginBtn = document.getElementById('login-btn');
-        const signoutBtn = document.getElementById('signout-btn');
+        
+        const mainContent = document.getElementById('main-content');
         const authSection = document.getElementById('auth-section');
-        const uploadSection = document.getElementById('upload-section');
-        const userInfo = document.getElementById('user-info');
-        const welcomeMessage = document.getElementById('welcome-message');
-        const pdfUploadInput = document.getElementById('pdf-upload');
-        const progressContainer = document.getElementById('upload-progress-container');
-        const progressBar = document.getElementById('upload-progress-bar');
-        const uploadStatus = document.getElementById('upload-status');
+        const loginBtn = document.getElementById('login-btn');
+        const userSection = document.getElementById('user-section');
+        const logoutBtn = document.getElementById('logout-btn');
+        const userName = document.getElementById('user-name');
+        const pdfUpload = document.getElementById('pdf-upload');
+
+        const uploadingSection = document.getElementById('uploading-section');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+
         const linksSection = document.getElementById('links-section');
-        const presenterLinkInput = document.getElementById('presenter-link');
-        const remoteLinkInput = document.getElementById('remote-link');
-        const copyPresenterBtn = document.getElementById('copy-presenter');
-        const copyRemoteBtn = document.getElementById('copy-remote');
+        const presenterLink = document.getElementById('presenter-link');
+        const remoteLink = document.getElementById('remote-link');
 
-        // Handle Login & Signout
-        loginBtn.addEventListener('click', () => signInWithPopup(auth, provider));
-        signoutBtn.addEventListener('click', () => signOut(auth));
+        let currentUser = null;
 
-        // Listen for authentication state changes
+        // Auth state listener
         onAuthStateChanged(auth, (user) => {
             if (user) {
+                currentUser = user;
+                userName.textContent = user.displayName;
                 authSection.classList.add('hidden');
-                userInfo.classList.remove('hidden');
-                uploadSection.classList.remove('hidden');
-                welcomeMessage.textContent = `Welcome, ${user.displayName}!`;
+                userSection.classList.remove('hidden');
             } else {
+                currentUser = null;
                 authSection.classList.remove('hidden');
-                userInfo.classList.add('hidden');
-                uploadSection.classList.add('hidden');
-                linksSection.classList.add('hidden'); // Hide links on sign out
+                userSection.classList.add('hidden');
             }
         });
 
-        // Handle File Upload Logic
-        pdfUploadInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (!file) return; 
+        // Event Listeners
+        loginBtn.addEventListener('click', () => {
+            const provider = new GoogleAuthProvider();
+            signInWithPopup(auth, provider).catch(error => console.error("Sign in error", error));
+        });
 
-            if (file.type !== "application/pdf" || file.size > 10 * 1024 * 1024) {
-                alert("Please select a PDF file under 10MB.");
-                return;
+        logoutBtn.addEventListener('click', () => {
+            signOut(auth).catch(error => console.error("Sign out error", error));
+        });
+        
+        pdfUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file && file.type === "application/pdf") {
+                uploadFile(file);
+            } else {
+                alert("Please select a valid PDF file.");
             }
-            const user = auth.currentUser;
-            if (!user) {
+        });
+
+        // Main Functions
+        function uploadFile(file) {
+            if (!currentUser) {
                 alert("You must be signed in to upload a file.");
                 return;
             }
 
-            progressContainer.classList.remove('hidden');
-            const storageRef = ref(storage, `uploads/${user.uid}/${Date.now()}-${file.name}`);
+            const filePath = `uploads/${currentUser.uid}/${Date.now()}-${file.name}`;
+            const storageRef = ref(storage, filePath);
             const uploadTask = uploadBytesResumable(storageRef, file);
+
+            mainContent.classList.add('hidden');
+            uploadingSection.classList.remove('hidden');
 
             uploadTask.on('state_changed', 
                 (snapshot) => {
                     const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    uploadStatus.textContent = `Uploading... ${Math.round(progress)}%`;
                     progressBar.style.width = progress + '%';
+                    progressText.textContent = Math.round(progress) + '%';
                 }, 
                 (error) => {
                     console.error("Upload failed:", error);
-                    uploadStatus.textContent = `Upload failed. Please try again.`;
+                    alert("Upload failed. Please try again.");
+                    showMainContent();
                 }, 
                 () => {
-                    uploadStatus.textContent = 'Upload complete! Generating links...';
                     getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
                         console.log('File available at', downloadURL);
-                        createPresentationSession(downloadURL, user.uid);
+                        createPresentationSession(downloadURL);
                     });
                 }
             );
-        });
+        }
 
-        async function createPresentationSession(fileUrl, ownerId) {
+        async function createPresentationSession(fileUrl) {
             try {
+                // *** UPDATED: Set expiration to 4 hours from now ***
+                const expirationTime = Date.now() + 4 * 60 * 60 * 1000; // 4 hours in milliseconds
+                const expiresAt = Timestamp.fromMillis(expirationTime);
+
                 const sessionData = {
+                    ownerId: currentUser.uid,
                     fileUrl: fileUrl,
-                    ownerId: ownerId,
-                    currentPage: 1,
-                    createdAt: serverTimestamp() 
+                    createdAt: Timestamp.now(),
+                    expiresAt: expiresAt,
+                    currentPage: 1
                 };
-                
+
                 const docRef = await addDoc(collection(db, "presentations"), sessionData);
                 console.log("Document written with ID: ", docRef.id);
-
-                const presenterURL = `${window.location.origin}/presenter.html?id=${docRef.id}`;
-                const remoteURL = `${window.location.origin}/remote.html?id=${docRef.id}`;
-
-                presenterLinkInput.value = presenterURL;
-                remoteLinkInput.value = remoteURL;
-
-                uploadSection.classList.add('hidden');
-                linksSection.classList.remove('hidden');
-
+                generateAndDisplayLinks(docRef.id);
             } catch (e) {
                 console.error("Error adding document: ", e);
-                uploadStatus.textContent = 'Failed to create session. Please try again.';
+                alert("Failed to create session. Please try again.");
+                showMainContent();
             }
         }
 
-        copyPresenterBtn.addEventListener('click', () => {
-            presenterLinkInput.select();
-            document.execCommand('copy');
-            copyPresenterBtn.textContent = 'Copied!';
-            setTimeout(() => { copyPresenterBtn.textContent = 'Copy'; }, 2000);
-        });
+        function generateAndDisplayLinks(docId) {
+            const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '');
+            presenterLink.value = `${baseUrl}presenter.html?id=${docId}`;
+            remoteLink.value = `${baseUrl}remote.html?id=${docId}`;
 
-        copyRemoteBtn.addEventListener('click', () => {
-            remoteLinkInput.select();
-            document.execCommand('copy');
-            copyRemoteBtn.textContent = 'Copied!';
-            setTimeout(() => { copyRemoteBtn.textContent = 'Copy'; }, 2000);
-        });
+            uploadingSection.classList.add('hidden');
+            linksSection.classList.remove('hidden');
+        }
+
+        function showMainContent() {
+            uploadingSection.classList.add('hidden');
+            linksSection.classList.add('hidden');
+            mainContent.classList.remove('hidden');
+        }
 
     </script>
 </body>
