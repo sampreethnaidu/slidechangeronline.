@@ -3,33 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Remote Control</title>
+    <title>Remote - SlideChangerOnline</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
 </head>
-<body class="bg-gray-200">
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen p-4">
+    <div id="loading-message" class="text-center">
+        <p class="text-xl">Connecting to presentation...</p>
+    </div>
 
-    <div class="flex flex-col items-center justify-center min-h-screen p-4 text-center">
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">Remote Control</h1>
-        <p id="status" class="text-gray-600 mb-8">Connecting...</p>
+    <div id="error-message" class="hidden text-center">
+        <p class="text-xl text-red-400">Could not connect. The presentation may have expired or the link is invalid.</p>
+    </div>
 
-        <div id="controls" class="hidden w-full max-w-sm">
-            <div class="mb-6">
-                <p class="text-lg">Page <span id="current-page-display" class="font-bold">1</span></p>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-                <button id="prev-btn" class="bg-gray-800 text-white font-bold py-6 px-4 rounded-lg text-2xl shadow-lg transform active:scale-95 transition-transform">
-                    &larr; Prev
-                </button>
-                <button id="next-btn" class="bg-indigo-600 text-white font-bold py-6 px-4 rounded-lg text-2xl shadow-lg transform active:scale-95 transition-transform">
-                    Next &rarr;
-                </button>
-            </div>
+    <div id="remote-controls" class="hidden w-full max-w-sm text-center">
+        <h1 class="text-2xl font-bold mb-4">Remote Control</h1>
+        
+        <div id="page-indicator" class="text-3xl font-light mb-8 bg-gray-800 rounded-lg py-4">
+            Page 1 of 1
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <button id="prev-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-8 rounded-lg text-2xl transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                Prev
+            </button>
+            <button id="next-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-8 rounded-lg text-2xl transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                Next
+            </button>
         </div>
     </div>
 
-    <script type="module">
+     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, doc, getDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         const firebaseConfig = {
   apiKey: "AIzaSyCtlgsNhCEsKLHA-WmfoqQleW_n2kCQerI",
@@ -43,64 +52,63 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- UI Elements ---
-        const statusEl = document.getElementById('status');
-        const controlsEl = document.getElementById('controls');
+        const loadingMessage = document.getElementById('loading-message');
+        const errorMessage = document.getElementById('error-message');
+        const remoteControls = document.getElementById('remote-controls');
         const prevBtn = document.getElementById('prev-btn');
         const nextBtn = document.getElementById('next-btn');
-        const pageDisplay = document.getElementById('current-page-display');
+        const pageIndicator = document.getElementById('page-indicator');
 
-        // --- Main Logic ---
+        let currentPage = 1;
+        let totalPages = 1;
+
         const params = new URLSearchParams(window.location.search);
         const presentationId = params.get('id');
-        let docRef;
 
-        if (!presentationId) {
-            statusEl.textContent = "Error: No presentation ID found in URL.";
-        } else {
-            docRef = doc(db, "presentations", presentationId);
-            statusEl.textContent = 'Connected!';
-            controlsEl.classList.remove('hidden');
+        if (presentationId) {
+            const docRef = doc(db, "presentations", presentationId);
 
-            // Listen for changes to show the current page number
             onSnapshot(docRef, (doc) => {
                 if (doc.exists()) {
-                    pageDisplay.textContent = doc.data().currentPage;
+                    loadingMessage.classList.add('hidden');
+                    remoteControls.classList.remove('hidden');
+
+                    const data = doc.data();
+                    currentPage = data.currentPage || 1;
+                    totalPages = data.totalPages || 1; 
+
+                    pageIndicator.textContent = `Page ${currentPage} of ${totalPages}`;
+
+                    prevBtn.disabled = (currentPage <= 1);
+                    nextBtn.disabled = (currentPage >= totalPages);
+
+                } else {
+                    loadingMessage.classList.add('hidden');
+                    errorMessage.classList.remove('hidden');
                 }
+            }, (error) => {
+                console.error("Error connecting:", error);
+                loadingMessage.classList.add('hidden');
+                errorMessage.classList.remove('hidden');
             });
+            
+            prevBtn.addEventListener('click', () => {
+                if (prevBtn.disabled) return;
+                const newPage = currentPage - 1;
+                updateDoc(docRef, { currentPage: newPage });
+            });
+
+            nextBtn.addEventListener('click', () => {
+                if (nextBtn.disabled) return;
+                const newPage = currentPage + 1;
+                updateDoc(docRef, { currentPage: newPage });
+            });
+
+        } else {
+            loadingMessage.classList.add('hidden');
+            errorMessage.classList.remove('hidden');
         }
-
-        // --- Button Click Handlers ---
-        prevBtn.addEventListener('click', () => changePage(-1));
-        nextBtn.addEventListener('click', () => changePage(1));
-
-        async function changePage(direction) {
-            if (!docRef) return;
-
-            // Disable buttons to prevent multiple clicks
-            prevBtn.disabled = true;
-            nextBtn.disabled = true;
-
-            try {
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    const current = docSnap.data().currentPage;
-                    const newPage = current + direction;
-
-                    // Basic validation: don't go below page 1 (we don't know the max page here)
-                    if (newPage > 0) {
-                        await updateDoc(docRef, { currentPage: newPage });
-                    }
-                }
-            } catch (error) {
-                console.error("Error changing page: ", error);
-            } finally {
-                // Re-enable buttons
-                prevBtn.disabled = false;
-                nextBtn.disabled = false;
-            }
-        }
-
     </script>
 </body>
 </html>
+
