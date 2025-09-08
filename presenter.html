@@ -3,70 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Presenter View</title>
+    <title>Presenter View - SlideChangerOnline</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- PDF.js library from Mozilla -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
     <style>
-        body {
+        body { font-family: 'Inter', sans-serif; overflow: hidden; }
+        #pdf-canvas { width: 100%; height: 100%; }
+        #presenter-container {
+            width: 100vw;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background-color: #111827; /* Dark background for presentations */
-        }
-        #pdf-canvas {
-            border: 1px solid #374151;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            max-width: 95vw;
-            max-height: 85vh;
-            object-fit: contain;
-        }
-        #page-info {
-            position: absolute;
-            bottom: 10px;
-            color: white;
-            background-color: rgba(0,0,0,0.7);
-            padding: 5px 15px;
-            border-radius: 15px;
-            font-family: sans-serif;
-        }
-        #fullscreen-btn {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background-color: rgba(0,0,0,0.7);
-            border: none;
-            border-radius: 50%;
-            padding: 10px;
-            cursor: pointer;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
     </style>
 </head>
-<body>
+<body class="bg-gray-800 text-white flex items-center justify-center">
+    <div id="presenter-container">
+        <div id="loading-message" class="flex flex-col items-center justify-center h-full">
+            <svg class="animate-spin h-10 w-10 text-white mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="text-xl">Loading presentation...</p>
+        </div>
 
-    <div id="loading" class="text-white text-2xl">Loading Presentation...</div>
-
-    <canvas id="pdf-canvas" class="hidden"></canvas>
-    
-    <div id="page-info" class="hidden">
-        Page <span id="page-num"></span> of <span id="page-count"></span>
+        <div id="error-message" class="hidden flex-col items-center justify-center h-full">
+             <p class="text-xl text-red-400">Could not load presentation. It may have expired or the link is invalid.</p>
+        </div>
+        
+        <div id="pdf-container" class="hidden flex-grow relative">
+            <canvas id="pdf-canvas"></canvas>
+            <button id="fullscreen-btn" class="absolute bottom-4 right-4 bg-gray-900 bg-opacity-50 hover:bg-opacity-75 text-white font-bold p-3 rounded-full transition duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+            </button>
+        </div>
     </div>
-    
-    <!-- Fullscreen Button -->
-    <button id="fullscreen-btn" title="Toggle Fullscreen">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-    </button>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         const firebaseConfig = {
   apiKey: "AIzaSyCtlgsNhCEsKLHA-WmfoqQleW_n2kCQerI",
@@ -80,94 +56,107 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- PDF.js Setup ---
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
+        const loadingMessage = document.getElementById('loading-message');
+        const errorMessage = document.getElementById('error-message');
+        const pdfContainer = document.getElementById('pdf-container');
         const canvas = document.getElementById('pdf-canvas');
         const ctx = canvas.getContext('2d');
-        let pdfDoc = null; 
-
-        // --- UI Elements ---
-        const loadingMessage = document.getElementById('loading');
-        const pageInfo = document.getElementById('page-info');
-        const pageNumSpan = document.getElementById('page-num');
-        const pageCountSpan = document.getElementById('page-count');
         const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const presenterContainer = document.getElementById('presenter-container');
+        
+        let pdfDoc = null;
+        let pageNum = 1;
 
-        // --- Main Logic ---
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
+
+        function renderPage(num) {
+            pdfDoc.getPage(num).then(function(page) {
+                const viewport = page.getViewport({ scale: 1.5 });
+                const container = presenterContainer;
+                const scale = Math.min(container.clientWidth / viewport.width, container.clientHeight / viewport.height);
+                const scaledViewport = page.getViewport({ scale: scale * 0.95 });
+
+                canvas.height = scaledViewport.height;
+                canvas.width = scaledViewport.width;
+
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: scaledViewport
+                };
+                page.render(renderContext);
+            });
+            pageNum = num;
+        }
+        
+        // Main logic
         const params = new URLSearchParams(window.location.search);
         const presentationId = params.get('id');
 
-        if (!presentationId) {
-            loadingMessage.textContent = "Error: No presentation ID found in URL.";
-        } else {
+        if (presentationId) {
             const docRef = doc(db, "presentations", presentationId);
 
-            onSnapshot(docRef, (docSnap) => {
-                if (!docSnap.exists()) {
-                    loadingMessage.textContent = "Error: Presentation not found or has expired.";
-                    return;
-                }
+            // Listen for real-time updates on the document
+            const unsubscribe = onSnapshot(docRef, (doc) => {
+                if (doc.exists()) {
+                    const data = doc.data();
+                    
+                    // If pdfDoc is not loaded yet, load it
+                    if (!pdfDoc) {
+                        const url = data.fileUrl;
+                        const loadingTask = pdfjsLib.getDocument(url);
+                        loadingTask.promise.then(function(pdfDoc_) {
+                            pdfDoc = pdfDoc_;
+                            
+                            // *** NEW: Get total pages and update the database ***
+                            const totalPages = pdfDoc.numPages;
+                            updateDoc(docRef, { totalPages: totalPages })
+                                .catch(err => console.error("Could not update total pages:", err));
+                            
+                            loadingMessage.classList.add('hidden');
+                            pdfContainer.classList.remove('hidden');
+                            renderPage(data.currentPage);
+                        }, function (reason) {
+                            console.error("Error loading PDF:", reason);
+                            loadingMessage.classList.add('hidden');
+                            errorMessage.classList.remove('hidden');
+                        });
+                    }
 
-                const data = docSnap.data();
-                const currentPage = data.currentPage;
-
-                if (!pdfDoc) {
-                    loadPdf(data.fileUrl, currentPage);
+                    // If the currentPage changes, render the new page
+                    if (pageNum !== data.currentPage) {
+                        renderPage(data.currentPage);
+                    }
                 } else {
-                    renderPage(currentPage);
+                    console.error("No such document!");
+                    loadingMessage.classList.add('hidden');
+                    errorMessage.classList.remove('hidden');
+                    unsubscribe();
                 }
-            });
-        }
-
-        async function loadPdf(pdfUrl, initialPage) {
-            try {
-                // We no longer need the proxy. We can use the direct URL.
-                pdfDoc = await pdfjsLib.getDocument(pdfUrl).promise;
-                
+            }, (error) => {
+                console.error("Error getting document:", error);
                 loadingMessage.classList.add('hidden');
-                canvas.classList.remove('hidden');
-                pageInfo.classList.remove('hidden');
-                pageCountSpan.textContent = pdfDoc.numPages;
-
-                renderPage(initialPage);
-            } catch (error) {
-                console.error("Error loading PDF:", error);
-                loadingMessage.textContent = "Error loading PDF. Please ensure the file is valid.";
-            }
+                errorMessage.classList.remove('hidden');
+            });
+        } else {
+            loadingMessage.classList.add('hidden');
+            errorMessage.classList.remove('hidden');
         }
 
-        async function renderPage(num) {
-            if (!pdfDoc || num < 1 || num > pdfDoc.numPages) return;
-
-            const page = await pdfDoc.getPage(num);
-            const viewport = page.getViewport({ scale: 2.0 });
-
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
-
-            const renderContext = {
-                canvasContext: ctx,
-                viewport: viewport
-            };
-            await page.render(renderContext).promise;
-
-            pageNumSpan.textContent = num;
-        }
-
-        // --- Fullscreen Logic ---
-        fullscreenBtn.addEventListener('click', toggleFullScreen);
-
-        function toggleFullScreen() {
+        fullscreenBtn.addEventListener('click', () => {
             if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
+                presenterContainer.requestFullscreen().catch(err => {
                     alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
                 });
             } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                }
+                document.exitFullscreen();
             }
-        }
+        });
+
+        window.addEventListener('resize', () => {
+             if (pdfDoc) {
+                renderPage(pageNum);
+            }
+        });
     </script>
 </body>
 </html>
