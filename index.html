@@ -6,72 +6,94 @@
     <title>SlideChangerOnline</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- NEW: QR Code Generation Library -->
+    <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
+        .hidden { display: none; }
     </style>
 </head>
-<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
-
-    <div class="w-full max-w-2xl mx-auto p-8 text-center">
-        <!-- Main Content Area -->
-        <div id="main-content">
-            <h1 class="text-5xl font-bold mb-2">SlideChangerOnline</h1>
-            <p class="text-lg text-gray-400 mb-8">The easiest way to present your PDFs, remotely.</p>
-
-            <!-- Auth Section -->
-            <div id="auth-section">
-                <p class="mb-4">Please sign in to continue.</p>
-                <button id="login-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 flex items-center justify-center mx-auto">
-                    <svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#FFFFFF"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-                    Sign In with Google
-                </button>
-            </div>
-
-            <!-- Logged In Section -->
-            <div id="user-section" class="hidden">
-                <p class="mb-2">Welcome, <span id="user-name" class="font-semibold"></span>!</p>
-                <button id="logout-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 mb-6 text-sm">Sign Out</button>
-                <p class="text-gray-400 mb-4">You're signed in! Upload your PDF to get started.</p>
-                <div class="bg-gray-800 border-2 border-dashed border-gray-600 rounded-lg p-10">
-                     <label for="pdf-upload" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 cursor-pointer">
-                        Choose your PDF
-                    </label>
-                    <input id="pdf-upload" type="file" class="hidden" accept=".pdf">
-                </div>
-            </div>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-lg shadow-xl text-center w-full max-w-lg mx-4">
+        
+        <!-- Main Title Section -->
+        <div id="main-title-section">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">SlideChangerOnline</h1>
+            <p class="text-gray-600 mb-8">The easiest way to present your PDFs, remotely.</p>
         </div>
 
-        <!-- Uploading Section -->
-        <div id="uploading-section" class="hidden">
-            <h2 class="text-2xl font-semibold mb-4">Uploading your file...</h2>
-            <div class="w-full bg-gray-700 rounded-full h-4 mb-4">
-                <div id="progress-bar" class="bg-green-500 h-4 rounded-full" style="width: 0%"></div>
-            </div>
-            <p id="progress-text" class="text-lg">0%</p>
+        <!-- Login Section -->
+        <div id="login-section">
+            <p class="mb-4 text-gray-700">Please sign in to continue.</p>
+            <button id="login-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                Sign In with Google
+            </button>
         </div>
 
-        <!-- Links Section -->
-        <div id="links-section" class="hidden bg-gray-800 rounded-lg p-8">
-            <h2 class="text-2xl font-semibold mb-4">Your Links are Ready!</h2>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-left text-gray-400 mb-1">Presenter Link (for the big screen)</label>
-                    <input id="presenter-link" type="text" readonly class="w-full bg-gray-900 text-white p-2 rounded border border-gray-600">
-                </div>
-                <div>
-                    <label class="block text-left text-gray-400 mb-1">Remote Link (for your phone)</label>
-                    <input id="remote-link" type="text" readonly class="w-full bg-gray-900 text-white p-2 rounded border border-gray-600">
-                </div>
+        <!-- Logged In Section -->
+        <div id="logged-in-section" class="hidden">
+            <p class="text-lg text-gray-700 mb-2">Welcome, <span id="user-name" class="font-semibold"></span>!</p>
+            <button id="logout-btn" class="text-sm text-blue-600 hover:underline mb-6">Sign out</button>
+            
+            <div id="upload-section">
+                <p class="mb-4">You're signed in! Upload your PDF to get started.</p>
+                <input type="file" id="pdf-upload" accept=".pdf" class="hidden">
+                <label for="pdf-upload" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg cursor-pointer transition duration-300">
+                    Choose your PDF
+                </label>
             </div>
-             <p class="text-sm text-gray-500 mt-4">These links will expire in 4 hours.</p>
+            
+            <div id="upload-progress-section" class="hidden mt-6">
+                 <p class="mb-2">Uploading...</p>
+                 <div class="w-full bg-gray-200 rounded-full h-4">
+                     <div id="progress-bar" class="bg-blue-500 h-4 rounded-full" style="width: 0%"></div>
+                 </div>
+                 <p id="progress-text" class="text-sm mt-1">0%</p>
+            </div>
+
+            <div id="links-section" class="hidden mt-8 text-left bg-gray-50 p-6 rounded-lg">
+                <h2 class="text-2xl font-bold text-center mb-4">Your Links are Ready!</h2>
+                <div class="mb-4">
+                    <label class="font-semibold text-gray-700">Presenter Link (for the big screen):</label>
+                    <input id="presenter-link" type="text" readonly class="w-full bg-gray-200 p-2 mt-1 rounded border">
+                </div>
+                <div class="mb-6">
+                    <label class="font-semibold text-gray-700">Remote Link (for your phone):</label>
+                    <input id="remote-link" type="text" readonly class="w-full bg-gray-200 p-2 mt-1 rounded border">
+                </div>
+                
+                <!-- NEW: Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-4 mb-4">
+                    <button id="copy-links-btn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition">Copy Links</button>
+                    <button id="show-qr-btn" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition">Show QR Codes</button>
+                </div>
+                 <p id="copy-success" class="text-green-500 text-center text-sm hidden">Links copied to clipboard!</p>
+                
+                <!-- NEW: QR Code Display Area -->
+                <div id="qr-code-section" class="hidden mt-6 pt-4 border-t">
+                    <h3 class="text-lg font-bold text-center mb-4">Scan for Quick Access</h3>
+                    <div class="flex justify-around items-center">
+                        <div class="text-center">
+                            <p class="font-semibold">Presenter</p>
+                            <div id="qr-presenter" class="p-2 bg-white inline-block rounded-lg mt-2"></div>
+                        </div>
+                        <div class="text-center">
+                            <p class="font-semibold">Remote</p>
+                            <div id="qr-remote" class="p-2 bg-white inline-block rounded-lg mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="text-sm text-gray-500 text-center mt-4">These links will expire in 4 hours.</p>
+            </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-        import { getFirestore, collection, addDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         const firebaseConfig = {
   apiKey: "AIzaSyCtlgsNhCEsKLHA-WmfoqQleW_n2kCQerI",
@@ -86,71 +108,58 @@
         const auth = getAuth(app);
         const storage = getStorage(app);
         const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
         
-        const mainContent = document.getElementById('main-content');
-        const authSection = document.getElementById('auth-section');
+        const loginSection = document.getElementById('login-section');
+        const loggedInSection = document.getElementById('logged-in-section');
         const loginBtn = document.getElementById('login-btn');
-        const userSection = document.getElementById('user-section');
         const logoutBtn = document.getElementById('logout-btn');
         const userName = document.getElementById('user-name');
         const pdfUpload = document.getElementById('pdf-upload');
-
-        const uploadingSection = document.getElementById('uploading-section');
+        const uploadProgressSection = document.getElementById('upload-progress-section');
         const progressBar = document.getElementById('progress-bar');
         const progressText = document.getElementById('progress-text');
-
         const linksSection = document.getElementById('links-section');
-        const presenterLink = document.getElementById('presenter-link');
-        const remoteLink = document.getElementById('remote-link');
 
-        let currentUser = null;
-
-        // Auth state listener
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                currentUser = user;
+                loginSection.classList.add('hidden');
+                loggedInSection.classList.remove('hidden');
                 userName.textContent = user.displayName;
-                authSection.classList.add('hidden');
-                userSection.classList.remove('hidden');
             } else {
-                currentUser = null;
-                authSection.classList.remove('hidden');
-                userSection.classList.add('hidden');
+                loginSection.classList.remove('hidden');
+                loggedInSection.classList.add('hidden');
+                userName.textContent = '';
             }
         });
 
-        // Event Listeners
         loginBtn.addEventListener('click', () => {
-            const provider = new GoogleAuthProvider();
-            signInWithPopup(auth, provider).catch(error => console.error("Sign in error", error));
+            signInWithPopup(auth, provider).catch(error => console.error("Login failed:", error));
         });
 
         logoutBtn.addEventListener('click', () => {
-            signOut(auth).catch(error => console.error("Sign out error", error));
+            signOut(auth);
         });
-        
+
         pdfUpload.addEventListener('change', (e) => {
             const file = e.target.files[0];
-            if (file && file.type === "application/pdf") {
+            if (file) {
                 uploadFile(file);
-            } else {
-                alert("Please select a valid PDF file.");
             }
         });
-
-        // Main Functions
+        
         function uploadFile(file) {
-            if (!currentUser) {
-                alert("You must be signed in to upload a file.");
+            const user = auth.currentUser;
+            if (!user) {
+                alert("You must be logged in to upload a file.");
                 return;
             }
-
-            const filePath = `uploads/${currentUser.uid}/${Date.now()}-${file.name}`;
+            const filePath = `uploads/${user.uid}/${Date.now()}-${file.name}`;
             const storageRef = ref(storage, filePath);
             const uploadTask = uploadBytesResumable(storageRef, file);
 
-            mainContent.classList.add('hidden');
-            uploadingSection.classList.remove('hidden');
+            uploadProgressSection.classList.remove('hidden');
+            linksSection.classList.add('hidden');
 
             uploadTask.on('state_changed', 
                 (snapshot) => {
@@ -161,7 +170,7 @@
                 (error) => {
                     console.error("Upload failed:", error);
                     alert("Upload failed. Please try again.");
-                    showMainContent();
+                    uploadProgressSection.classList.add('hidden');
                 }, 
                 () => {
                     getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
@@ -174,43 +183,71 @@
 
         async function createPresentationSession(fileUrl) {
             try {
-                // *** UPDATED: Set expiration to 4 hours from now ***
-                const expirationTime = Date.now() + 4 * 60 * 60 * 1000; // 4 hours in milliseconds
-                const expiresAt = Timestamp.fromMillis(expirationTime);
-
                 const sessionData = {
-                    ownerId: currentUser.uid,
                     fileUrl: fileUrl,
-                    createdAt: Timestamp.now(),
-                    expiresAt: expiresAt,
-                    currentPage: 1
+                    currentPage: 1,
+                    createdAt: serverTimestamp(),
+                    expiresAt: new Date(Date.now() + 4 * 60 * 60 * 1000) // 4 hours from now
                 };
-
                 const docRef = await addDoc(collection(db, "presentations"), sessionData);
                 console.log("Document written with ID: ", docRef.id);
-                generateAndDisplayLinks(docRef.id);
+                displayLinks(docRef.id);
             } catch (e) {
                 console.error("Error adding document: ", e);
                 alert("Failed to create session. Please try again.");
-                showMainContent();
             }
         }
-
-        function generateAndDisplayLinks(docId) {
+        
+        function displayLinks(id) {
             const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '');
-            presenterLink.value = `${baseUrl}presenter.html?id=${docId}`;
-            remoteLink.value = `${baseUrl}remote.html?id=${docId}`;
+            const presenterLinkInput = document.getElementById('presenter-link');
+            const remoteLinkInput = document.getElementById('remote-link');
+            const copyLinksBtn = document.getElementById('copy-links-btn');
+            const showQrBtn = document.getElementById('show-qr-btn');
+            const qrCodeSection = document.getElementById('qr-code-section');
+            const copySuccess = document.getElementById('copy-success');
 
-            uploadingSection.classList.add('hidden');
+            const presenterUrl = `${baseUrl}presenter.html?id=${id}`;
+            const remoteUrl = `${baseUrl}remote.html?id=${id}`;
+
+            presenterLinkInput.value = presenterUrl;
+            remoteLinkInput.value = remoteUrl;
+            
+            uploadProgressSection.classList.add('hidden');
             linksSection.classList.remove('hidden');
-        }
+            
+            // --- NEW: Copy and QR Code Logic ---
+            copyLinksBtn.addEventListener('click', () => {
+                const textToCopy = `Presenter Link: ${presenterUrl}\nRemote Link: ${remoteUrl}`;
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    copySuccess.classList.remove('hidden');
+                    setTimeout(() => copySuccess.classList.add('hidden'), 2000);
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                });
+            });
 
-        function showMainContent() {
-            uploadingSection.classList.add('hidden');
-            linksSection.classList.add('hidden');
-            mainContent.classList.remove('hidden');
-        }
+            showQrBtn.addEventListener('click', () => {
+                const qrPresenterDiv = document.getElementById('qr-presenter');
+                const qrRemoteDiv = document.getElementById('qr-remote');
+                
+                qrPresenterDiv.innerHTML = '';
+                qrRemoteDiv.innerHTML = '';
 
+                new QRCode(qrPresenterDiv, {
+                    text: presenterUrl,
+                    width: 128,
+                    height: 128,
+                });
+                new QRCode(qrRemoteDiv, {
+                    text: remoteUrl,
+                    width: 128,
+                    height: 128,
+                });
+
+                qrCodeSection.classList.remove('hidden');
+            });
+        }
     </script>
 </body>
 </html>
