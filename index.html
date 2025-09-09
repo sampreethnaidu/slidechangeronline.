@@ -6,7 +6,7 @@
     <title>SlideChangerOnline</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- NEW: QR Code Generation Library -->
+    <!-- QR Code Generation Library -->
     <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -32,8 +32,12 @@
 
         <!-- Logged In Section -->
         <div id="logged-in-section" class="hidden">
-            <p class="text-lg text-gray-700 mb-2">Welcome, <span id="user-name" class="font-semibold"></span>!</p>
-            <button id="logout-btn" class="text-sm text-blue-600 hover:underline mb-6">Sign out</button>
+            <!-- UPDATED: Added Dashboard link -->
+            <div class="flex justify-center items-center gap-4 mb-6">
+                 <p class="text-lg text-gray-700">Welcome, <span id="user-name" class="font-semibold"></span>!</p>
+                 <a href="./dashboard.html" class="text-sm text-blue-600 hover:underline">Dashboard</a>
+                 <button id="logout-btn" class="text-sm text-blue-600 hover:underline">Sign out</button>
+            </div>
             
             <div id="upload-section">
                 <p class="mb-4">You're signed in! Upload your PDF to get started.</p>
@@ -62,14 +66,12 @@
                     <input id="remote-link" type="text" readonly class="w-full bg-gray-200 p-2 mt-1 rounded border">
                 </div>
                 
-                <!-- NEW: Action Buttons -->
                 <div class="flex flex-col sm:flex-row gap-4 mb-4">
                     <button id="copy-links-btn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition">Copy Links</button>
                     <button id="show-qr-btn" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition">Show QR Codes</button>
                 </div>
                  <p id="copy-success" class="text-green-500 text-center text-sm hidden">Links copied to clipboard!</p>
                 
-                <!-- NEW: QR Code Display Area -->
                 <div id="qr-code-section" class="hidden mt-6 pt-4 border-t">
                     <h3 class="text-lg font-bold text-center mb-4">Scan for Quick Access</h3>
                     <div class="flex justify-around items-center">
@@ -175,7 +177,6 @@
                 () => {
                     getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
                         console.log('File available at', downloadURL);
-                        // Pass the file name to the next function
                         createPresentationSession(downloadURL, file.name);
                     });
                 }
@@ -191,21 +192,21 @@
             try {
                 // 1. Create the temporary presentation session
                 const sessionData = {
-                    userId: user.uid, // Store the user's ID
+                    userId: user.uid,
                     fileUrl: fileUrl,
                     currentPage: 1,
                     createdAt: serverTimestamp(),
-                    expiresAt: new Date(Date.now() + 4 * 60 * 60 * 1000) // 4 hours from now
+                    expiresAt: new Date(Date.now() + 4 * 60 * 60 * 1000) 
                 };
                 const docRef = await addDoc(collection(db, "presentations"), sessionData);
                 console.log("Document written with ID: ", docRef.id);
 
-                // 2. NEW: Create the permanent history record
+                // 2. Create the permanent history record
                 const historyData = {
                     userId: user.uid,
                     fileName: fileName,
                     uploadedAt: serverTimestamp(),
-                    presentationId: docRef.id // Link to the original session
+                    presentationId: docRef.id 
                 };
                 await addDoc(collection(db, "history"), historyData);
                 console.log("History record created for user: ", user.uid);
@@ -235,7 +236,6 @@
             uploadProgressSection.classList.add('hidden');
             linksSection.classList.remove('hidden');
             
-            // --- NEW: Copy and QR Code Logic ---
             copyLinksBtn.addEventListener('click', () => {
                 const textToCopy = `Presenter Link: ${presenterUrl}\nRemote Link: ${remoteUrl}`;
                 navigator.clipboard.writeText(textToCopy).then(() => {
