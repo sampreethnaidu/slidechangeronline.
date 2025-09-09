@@ -175,15 +175,23 @@
                 () => {
                     getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
                         console.log('File available at', downloadURL);
-                        createPresentationSession(downloadURL);
+                        // Pass the file name to the next function
+                        createPresentationSession(downloadURL, file.name);
                     });
                 }
             );
         }
 
-        async function createPresentationSession(fileUrl) {
+        async function createPresentationSession(fileUrl, fileName) {
+            const user = auth.currentUser;
+            if (!user) {
+                 alert("User not found for session creation.");
+                 return;
+            }
             try {
+                // 1. Create the temporary presentation session
                 const sessionData = {
+                    userId: user.uid, // Store the user's ID
                     fileUrl: fileUrl,
                     currentPage: 1,
                     createdAt: serverTimestamp(),
@@ -191,6 +199,17 @@
                 };
                 const docRef = await addDoc(collection(db, "presentations"), sessionData);
                 console.log("Document written with ID: ", docRef.id);
+
+                // 2. NEW: Create the permanent history record
+                const historyData = {
+                    userId: user.uid,
+                    fileName: fileName,
+                    uploadedAt: serverTimestamp(),
+                    presentationId: docRef.id // Link to the original session
+                };
+                await addDoc(collection(db, "history"), historyData);
+                console.log("History record created for user: ", user.uid);
+
                 displayLinks(docRef.id);
             } catch (e) {
                 console.error("Error adding document: ", e);
