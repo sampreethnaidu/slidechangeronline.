@@ -3,7 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SlideChangerOnline</title>
+    
+    <!-- UPDATED: SEO Title -->
+    <title>SlideChangerOnline | Present PDFs Remotely with Your Phone</title>
+
+    <!-- NEW: SEO Meta Tags -->
+    <meta name="description" content="A free online tool to present your PDF files on any screen and use your phone as a secure remote control. No downloads, no USB drives. Just upload and present.">
+    <meta name="keywords" content="pdf presenter, remote presentation, online slide changer, phone as remote, pdf slides, web presenter">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
@@ -23,6 +30,24 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
     </style>
+
+    <!-- NEW: Structured Data for Rich Search Results -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "SlideChangerOnline",
+      "applicationCategory": "ProductivityApplication",
+      "operatingSystem": "Web",
+      "description": "A free online tool to present PDF files on any screen and use your phone as a secure remote control.",
+      "url": "https://www.slidechangeronline.me",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    }
+    </script>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
     <div class="absolute top-4 left-4">
@@ -53,9 +78,7 @@
              <p id="join-error" class="text-red-400 text-sm mt-3 hidden">Invalid or expired code. Please try again.</p>
         </div>
         
-        <!-- UPDATED: Login & Register Section -->
         <div id="auth-section">
-            <!-- Email/Password Login Form -->
             <div id="login-form">
                  <input type="email" id="login-email" placeholder="Email" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-3 text-center">
                  <input type="password" id="login-password" placeholder="Password" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-4 text-center">
@@ -63,7 +86,6 @@
                  <p class="text-sm text-gray-400">Don't have an account? <button id="show-register-btn" class="text-amber-400 hover:underline">Create one</button></p>
             </div>
 
-            <!-- Email/Password Registration Form -->
             <div id="register-form" class="hidden">
                  <input type="text" id="register-name" placeholder="Your Name" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-3 text-center">
                  <input type="email" id="register-email" placeholder="Email" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-3 text-center">
@@ -74,21 +96,18 @@
 
              <p id="auth-error" class="text-red-400 text-sm mt-3 hidden"></p>
 
-            <!-- Divider -->
             <div class="my-6 flex items-center">
                 <div class="flex-grow border-t border-gray-600"></div>
                 <span class="flex-shrink mx-4 text-gray-400">OR</span>
                 <div class="flex-grow border-t border-gray-600"></div>
             </div>
 
-            <!-- Google Sign In Button -->
             <button id="login-google-btn" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg transition duration-300 flex items-center justify-center gap-2">
                  <svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></svg>
                 Sign In with Google
             </button>
         </div>
 
-        <!-- Logged In Section -->
         <div id="logged-in-section" class="hidden">
              <div class="flex justify-center items-center gap-4 mb-6">
                  <p class="text-lg text-gray-200">Welcome, <span id="user-name" class="font-semibold text-white"></span>!</p>
@@ -161,7 +180,6 @@
             signInWithPopup, 
             signOut, 
             onAuthStateChanged,
-            // NEW: Import functions for email/password auth
             createUserWithEmailAndPassword,
             signInWithEmailAndPassword,
             updateProfile
@@ -184,20 +202,17 @@
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
         
-        // --- UPDATED: New element variables and logic ---
         const authSection = document.getElementById('auth-section');
         const loggedInSection = document.getElementById('logged-in-section');
         const logoutBtn = document.getElementById('logout-btn');
         const userName = document.getElementById('user-name');
         
-        // NEW: Form toggle buttons and forms
         const loginForm = document.getElementById('login-form');
         const registerForm = document.getElementById('register-form');
         const showRegisterBtn = document.getElementById('show-register-btn');
         const showLoginBtn = document.getElementById('show-login-btn');
         const authError = document.getElementById('auth-error');
 
-        // NEW: Login buttons
         const loginGoogleBtn = document.getElementById('login-google-btn');
         const loginEmailBtn = document.getElementById('login-email-btn');
         const registerEmailBtn = document.getElementById('register-email-btn');
@@ -217,7 +232,6 @@
             }
         });
         
-        // NEW: Form visibility toggles
         showRegisterBtn.addEventListener('click', () => {
             loginForm.classList.add('hidden');
             registerForm.classList.remove('hidden');
@@ -230,7 +244,6 @@
             authError.classList.add('hidden');
         });
 
-        // NEW: Auth event listeners
         loginGoogleBtn.addEventListener('click', () => signInWithPopup(auth, provider).catch(handleAuthError));
         logoutBtn.addEventListener('click', () => signOut(auth));
         
@@ -266,13 +279,12 @@
                 case 'auth/email-already-in-use': message = "An account with this email already exists."; break;
                 case 'auth/weak-password': message = "Password should be at least 6 characters long."; break;
                 case 'auth/missing-name': message = "Please enter your name."; break;
-                default: message = error.message; break; // Fallback for other errors
+                default: message = error.message; break;
             }
             authError.textContent = message;
             authError.classList.remove('hidden');
         }
 
-        // --- All existing JavaScript from your previous version is below ---
         const pdfUpload = document.getElementById('pdf-upload');
         const uploadProgressSection = document.getElementById('upload-progress-section');
         const progressBar = document.getElementById('progress-bar');
