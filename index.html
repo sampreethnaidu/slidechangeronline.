@@ -6,15 +6,36 @@
     <title>SlideChangerOnline</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- QR Code Generation Library -->
     <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { 
+            font-family: 'Inter', sans-serif;
+            background-image: url('https://images.unsplash.com/photo-1554189097-94d7a8d5ab24?q=80&w=2070&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+        }
         .hidden { display: none; }
+        .backdrop-blur-custom {
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            background-color: rgba(255, 255, 255, 0.7);
+        }
     </style>
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
-    <div class="bg-white p-8 rounded-lg shadow-xl text-center w-full max-w-lg mx-4">
+    <!-- NEW: Updated Logos -->
+    <div class="absolute top-4 left-4">
+        <a href="#">
+            <img src="image_4b390e.png" alt="Logo" class="h-16">
+        </a>
+    </div>
+     <div class="absolute bottom-4 right-4">
+        <a href="#">
+            <img src="image_4b390e.png" alt="Logo" class="h-16">
+        </a>
+    </div>
+
+    <div class="backdrop-blur-custom p-8 rounded-lg shadow-xl text-center w-full max-w-lg mx-4">
         
         <!-- Main Title Section -->
         <div id="main-title-section">
@@ -32,8 +53,7 @@
 
         <!-- Logged In Section -->
         <div id="logged-in-section" class="hidden">
-            <!-- UPDATED: Added Dashboard link -->
-            <div class="flex justify-center items-center gap-4 mb-6">
+             <div class="flex justify-center items-center gap-4 mb-6">
                  <p class="text-lg text-gray-700">Welcome, <span id="user-name" class="font-semibold"></span>!</p>
                  <a href="./dashboard.html" class="text-sm text-blue-600 hover:underline">Dashboard</a>
                  <button id="logout-btn" class="text-sm text-blue-600 hover:underline">Sign out</button>
@@ -98,13 +118,13 @@
         import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         const firebaseConfig = {
-  apiKey: "AIzaSyCtlgsNhCEsKLHA-WmfoqQleW_n2kCQerI",
-  authDomain: "slidechangeronline.firebaseapp.com",
-  projectId: "slidechangeronline",
-  storageBucket: "slidechangeronline.firebasestorage.app",
-  messagingSenderId: "1013262596418",
-  appId: "1:1013262596418:web:b7c9ee7e6da7545ff370db"
-};
+            apiKey: "AIzaSyCtlgsNhCEsKLHA-WmfoqQleW_n2kCQerI",
+            authDomain: "slidechangeronline.firebaseapp.com",
+            projectId: "slidechangeronline",
+            storageBucket: "slidechangeronline.firebasestorage.app",
+            messagingSenderId: "1013262596418",
+            appId: "1:1013262596418:web:b7c9ee7e6da7545ff370db"
+        };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -190,7 +210,6 @@
                  return;
             }
             try {
-                // 1. Create the temporary presentation session
                 const sessionData = {
                     userId: user.uid,
                     fileUrl: fileUrl,
@@ -199,9 +218,7 @@
                     expiresAt: new Date(Date.now() + 4 * 60 * 60 * 1000) 
                 };
                 const docRef = await addDoc(collection(db, "presentations"), sessionData);
-                console.log("Document written with ID: ", docRef.id);
 
-                // 2. Create the permanent history record
                 const historyData = {
                     userId: user.uid,
                     fileName: fileName,
@@ -209,7 +226,6 @@
                     presentationId: docRef.id 
                 };
                 await addDoc(collection(db, "history"), historyData);
-                console.log("History record created for user: ", user.uid);
 
                 displayLinks(docRef.id);
             } catch (e) {
