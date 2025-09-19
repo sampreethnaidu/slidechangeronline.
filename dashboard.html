@@ -20,18 +20,15 @@
                 <a href="./index.html" class="text-blue-600 hover:underline">&larr; Back to Home</a>
             </div>
 
-            <!-- Loading State -->
             <div id="loading-state" class="text-center text-gray-600">
                 <p>Loading your history...</p>
             </div>
 
-            <!-- Logged Out State -->
             <div id="logged-out-state" class="hidden text-center text-gray-600">
                 <p>You must be signed in to view your dashboard.</p>
                 <p class="mt-2 text-sm">Please go back to the <a href="./index.html" class="text-blue-600 hover:underline">home page</a> to sign in.</p>
             </div>
 
-            <!-- History Table -->
             <div id="history-table-section" class="hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
@@ -39,7 +36,8 @@
                             <tr>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File Name</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded On</th>
-                                <!-- NEW: Links Column -->
+                                <!-- NEW: Session Code Column -->
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Session Code</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Links</th>
                             </tr>
                         </thead>
@@ -59,13 +57,13 @@
         import { getFirestore, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         const firebaseConfig = {
-  apiKey: "AIzaSyCtlgsNhCEsKLHA-WmfoqQleW_n2kCQerI",
-  authDomain: "slidechangeronline.firebaseapp.com",
-  projectId: "slidechangeronline",
-  storageBucket: "slidechangeronline.firebasestorage.app",
-  messagingSenderId: "1013262596418",
-  appId: "1:1013262596418:web:b7c9ee7e6da7545ff370db"
-};
+            apiKey: "AIzaSyCtlgsNhCEsKLHA-WmfoqQleW_n2kCQerI",
+            authDomain: "slidechangeronline.firebaseapp.com",
+            projectId: "slidechangeronline",
+            storageBucket: "slidechangeronline.firebasestorage.app",
+            messagingSenderId: "1013262596418",
+            appId: "1:1013262596418:web:b7c9ee7e6da7545ff370db"
+        };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -108,18 +106,21 @@
                 querySnapshot.forEach(doc => {
                     const data = doc.data();
                     const date = data.uploadedAt.toDate().toLocaleString();
+                    
+                    // Handle cases where old history items might not have a code
+                    const sessionCode = data.sessionCode || 'N/A';
 
-                    // NEW: Construct the links
                     const presentationId = data.presentationId;
                     const baseUrl = window.location.origin + window.location.pathname.replace('dashboard.html', '');
                     const presenterUrl = `${baseUrl}presenter.html?id=${presentationId}`;
                     const remoteUrl = `${baseUrl}remote.html?id=${presentationId}`;
 
                     const row = document.createElement('tr');
-                    // UPDATED: Added new table cell for the links
+                    // UPDATED: Added new table cell for the session code
                     row.innerHTML = `
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${data.fileName}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${date}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700">${sessionCode}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             <a href="${presenterUrl}" target="_blank" class="text-blue-600 hover:underline">Presenter</a> |
                             <a href="${remoteUrl}" target="_blank" class="text-blue-600 hover:underline">Remote</a>
