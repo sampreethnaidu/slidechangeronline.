@@ -10,30 +10,31 @@
     <style>
         body { 
             font-family: 'Inter', sans-serif;
-            /* UPDATED: Points to your new background image */
+            /* UPDATED: New background image filename */
             background-image: url('Screenshot 2025-09-19 204654.png');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
         }
         .hidden { display: none; }
-        /* UPDATED: Switched to a dark, blurred background for the main card */
         .backdrop-blur-custom {
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            background-color: rgba(17, 24, 39, 0.8); /* Dark semi-transparent background */
+            background-color: rgba(17, 24, 39, 0.8);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen">
+<body class="flex items-center justify-center min-h-screen p-4">
     <div class="absolute top-4 left-4">
         <a href="#">
+            <!-- UPDATED: New logo filename -->
             <img src="Screenshot 2025-09-19 201612.png" alt="Logo" class="h-16 w-auto">
         </a>
     </div>
      <div class="absolute bottom-4 right-4">
         <a href="#">
+            <!-- UPDATED: New logo filename -->
             <img src="Screenshot 2025-09-19 201612.png" alt="Logo" class="h-16 w-auto">
         </a>
     </div>
@@ -41,32 +42,41 @@
     <div class="backdrop-blur-custom p-8 rounded-2xl shadow-2xl text-center w-full max-w-lg mx-4">
         
         <div id="main-title-section">
-            <!-- UPDATED: Text colors for dark theme -->
             <h1 class="text-4xl font-bold text-white mb-2">SlideChangerOnline</h1>
-            <p class="text-gray-300 mb-8">The easiest way to present your PDFs, remotely.</p>
+            <p class="text-gray-300 mb-6">The easiest way to present your PDFs, remotely.</p>
         </div>
 
+        <!-- NEW: Join with Code Section -->
+        <div id="join-with-code-section" class="mb-8 border-t border-b border-gray-700 py-6">
+            <h2 class="text-xl font-semibold text-white mb-3">Join a Session</h2>
+            <input type="number" id="session-code-input" placeholder="Enter 8-digit code" class="w-full bg-gray-700 text-white text-center p-3 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500 mb-4" oninput="this.value=this.value.slice(0,8)">
+            <div class="flex gap-4">
+                <button id="join-presenter-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition">Join as Presenter</button>
+                <button id="join-remote-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition">Join as Remote</button>
+            </div>
+             <p id="join-error" class="text-red-400 text-sm mt-3 hidden">Invalid or expired code. Please try again.</p>
+        </div>
+        
+        <!-- Login Section -->
         <div id="login-section">
-            <p class="mb-4 text-gray-200">Please sign in to continue.</p>
-            <!-- UPDATED: Button colors to match gold theme -->
+            <p class="mb-4 text-gray-200">Or, sign in to create a new session.</p>
             <button id="login-btn" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 shadow-lg">
                 Sign In with Google
             </button>
         </div>
 
+        <!-- Logged In Section -->
         <div id="logged-in-section" class="hidden">
              <div class="flex justify-center items-center gap-4 mb-6">
                  <p class="text-lg text-gray-200">Welcome, <span id="user-name" class="font-semibold text-white"></span>!</p>
-                 <!-- UPDATED: Link colors to match gold theme -->
                  <a href="./dashboard.html" class="text-sm text-amber-400 hover:text-amber-300 hover:underline">Dashboard</a>
                  <button id="logout-btn" class="text-sm text-amber-400 hover:text-amber-300 hover:underline">Sign out</button>
             </div>
             
             <div id="upload-section">
-                <p class="mb-4 text-gray-200">You're signed in! Upload your PDF to get started.</p>
                 <input type="file" id="pdf-upload" accept=".pdf" class="hidden">
                 <label for="pdf-upload" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-lg cursor-pointer transition duration-300 shadow-lg">
-                    Choose your PDF
+                    Choose PDF to Create Session
                 </label>
             </div>
             
@@ -79,21 +89,28 @@
             </div>
 
             <div id="links-section" class="hidden mt-8 text-left bg-gray-800/50 p-6 rounded-lg">
-                <h2 class="text-2xl font-bold text-center text-white mb-4">Your Links are Ready!</h2>
+                <h2 class="text-2xl font-bold text-center text-white mb-4">Your Session is Ready!</h2>
+                
+                <!-- NEW: Session Code Display -->
+                <div class="mb-4 text-center">
+                    <label class="font-semibold text-gray-200">Your Session Code:</label>
+                    <p id="session-code-display" class="text-3xl font-bold text-amber-400 tracking-widest mt-1"></p>
+                </div>
+
                 <div class="mb-4">
-                    <label class="font-semibold text-gray-200">Presenter Link (for the big screen):</label>
+                    <label class="font-semibold text-gray-200">Presenter Link:</label>
                     <input id="presenter-link" type="text" readonly class="w-full bg-gray-700 text-white p-2 mt-1 rounded border border-gray-600">
                 </div>
                 <div class="mb-6">
-                    <label class="font-semibold text-gray-200">Remote Link (for your phone):</label>
+                    <label class="font-semibold text-gray-200">Remote Link:</label>
                     <input id="remote-link" type="text" readonly class="w-full bg-gray-700 text-white p-2 mt-1 rounded border border-gray-600">
                 </div>
                 
                 <div class="flex flex-col sm:flex-row gap-4 mb-4">
-                    <button id="copy-links-btn" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition">Copy Links</button>
+                    <button id="copy-links-btn" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition">Copy Info</button>
                     <button id="show-qr-btn" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition">Show QR Codes</button>
                 </div>
-                 <p id="copy-success" class="text-green-400 text-center text-sm hidden">Links copied to clipboard!</p>
+                 <p id="copy-success" class="text-green-400 text-center text-sm hidden">Session info copied to clipboard!</p>
                 
                 <div id="qr-code-section" class="hidden mt-6 pt-4 border-t border-gray-700">
                     <h3 class="text-lg font-bold text-center text-white mb-4">Scan for Quick Access</h3>
@@ -109,17 +126,16 @@
                     </div>
                 </div>
 
-                <p class="text-sm text-gray-400 text-center mt-4">These links will expire in 4 hours.</p>
+                <p class="text-sm text-gray-400 text-center mt-4">This session will expire in 4 hours.</p>
             </div>
         </div>
     </div>
 
     <script type="module">
-        // Firebase and other JavaScript logic remains unchanged.
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCtlgsNhCEsKLHA-WmfoqQleW_n2kCQerI",
@@ -147,6 +163,13 @@
         const progressText = document.getElementById('progress-text');
         const linksSection = document.getElementById('links-section');
 
+        // NEW: Elements for session code joining
+        const sessionCodeInput = document.getElementById('session-code-input');
+        const joinPresenterBtn = document.getElementById('join-presenter-btn');
+        const joinRemoteBtn = document.getElementById('join-remote-btn');
+        const joinError = document.getElementById('join-error');
+        const sessionCodeDisplay = document.getElementById('session-code-display');
+
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 loginSection.classList.add('hidden');
@@ -159,23 +182,53 @@
             }
         });
 
-        loginBtn.addEventListener('click', () => {
-            signInWithPopup(auth, provider).catch(error => console.error("Login failed:", error));
-        });
-
-        logoutBtn.addEventListener('click', () => {
-            signOut(auth);
-        });
-
+        loginBtn.addEventListener('click', () => signInWithPopup(auth, provider).catch(error => console.error("Login failed:", error)));
+        logoutBtn.addEventListener('click', () => signOut(auth));
         pdfUpload.addEventListener('change', (e) => {
             const file = e.target.files[0];
-            if (file) {
-                uploadFile(file);
-            }
+            if (file) uploadFile(file);
         });
         
+        // NEW: Event listeners for join buttons
+        joinPresenterBtn.addEventListener('click', () => joinSession('presenter'));
+        joinRemoteBtn.addEventListener('click', () => joinSession('remote'));
+
+        // NEW: Function to join a session using a code
+        async function joinSession(type) {
+            const code = sessionCodeInput.value;
+            if (code.length !== 8) {
+                joinError.textContent = "Please enter a valid 8-digit code.";
+                joinError.classList.remove('hidden');
+                return;
+            }
+            
+            joinError.classList.add('hidden');
+
+            const presentationsRef = collection(db, "presentations");
+            // Find the presentation where the sessionCode matches the input
+            const q = query(presentationsRef, where("sessionCode", "==", code), limit(1));
+
+            try {
+                const querySnapshot = await getDocs(q);
+                if (querySnapshot.empty) {
+                    joinError.textContent = "Invalid or expired code. Please try again.";
+                    joinError.classList.remove('hidden');
+                } else {
+                    const doc = querySnapshot.docs[0];
+                    const id = doc.id;
+                    const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '');
+                    const url = `${baseUrl}${type}.html?id=${id}`;
+                    window.location.href = url; // Redirect the user
+                }
+            } catch (error) {
+                console.error("Error finding session:", error);
+                joinError.textContent = "An error occurred. Please try again.";
+                joinError.classList.remove('hidden');
+            }
+        }
+
         function uploadFile(file) {
-            const user = auth.currentUser;
+             const user = auth.currentUser;
             if (!user) {
                 alert("You must be logged in to upload a file.");
                 return;
@@ -200,7 +253,6 @@
                 }, 
                 () => {
                     getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                        console.log('File available at', downloadURL);
                         createPresentationSession(downloadURL, file.name);
                     });
                 }
@@ -209,17 +261,19 @@
 
         async function createPresentationSession(fileUrl, fileName) {
             const user = auth.currentUser;
-            if (!user) {
-                 alert("User not found for session creation.");
-                 return;
-            }
+            if (!user) return;
+
+            // NEW: Generate a random 8-digit code
+            const sessionCode = Math.floor(10000000 + Math.random() * 90000000).toString();
+
             try {
                 const sessionData = {
                     userId: user.uid,
                     fileUrl: fileUrl,
                     currentPage: 1,
                     createdAt: serverTimestamp(),
-                    expiresAt: new Date(Date.now() + 4 * 60 * 60 * 1000) 
+                    expiresAt: new Date(Date.now() + 4 * 60 * 60 * 1000),
+                    sessionCode: sessionCode // NEW: Save the code to the database
                 };
                 const docRef = await addDoc(collection(db, "presentations"), sessionData);
 
@@ -231,14 +285,14 @@
                 };
                 await addDoc(collection(db, "history"), historyData);
 
-                displayLinks(docRef.id);
+                displayLinks(docRef.id, sessionCode);
             } catch (e) {
                 console.error("Error adding document: ", e);
                 alert("Failed to create session. Please try again.");
             }
         }
         
-        function displayLinks(id) {
+        function displayLinks(id, sessionCode) {
             const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '');
             const presenterLinkInput = document.getElementById('presenter-link');
             const remoteLinkInput = document.getElementById('remote-link');
@@ -252,12 +306,13 @@
 
             presenterLinkInput.value = presenterUrl;
             remoteLinkInput.value = remoteUrl;
+            sessionCodeDisplay.textContent = sessionCode; // NEW: Show the code
             
             uploadProgressSection.classList.add('hidden');
             linksSection.classList.remove('hidden');
             
             copyLinksBtn.addEventListener('click', () => {
-                const textToCopy = `Presenter Link: ${presenterUrl}\nRemote Link: ${remoteUrl}`;
+                const textToCopy = `Session Code: ${sessionCode}\n\nPresenter Link: ${presenterUrl}\nRemote Link: ${remoteUrl}`;
                 navigator.clipboard.writeText(textToCopy).then(() => {
                     copySuccess.classList.remove('hidden');
                     setTimeout(() => copySuccess.classList.add('hidden'), 2000);
@@ -273,16 +328,8 @@
                 qrPresenterDiv.innerHTML = '';
                 qrRemoteDiv.innerHTML = '';
 
-                new QRCode(qrPresenterDiv, {
-                    text: presenterUrl,
-                    width: 128,
-                    height: 128,
-                });
-                new QRCode(qrRemoteDiv, {
-                    text: remoteUrl,
-                    width: 128,
-                    height: 128,
-                });
+                new QRCode(qrPresenterDiv, { text: presenterUrl, width: 128, height: 128 });
+                new QRCode(qrRemoteDiv, { text: remoteUrl, width: 128, height: 128 });
 
                 qrCodeSection.classList.remove('hidden');
             });
@@ -290,5 +337,4 @@
     </script>
 </body>
 </html>
-
 
