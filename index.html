@@ -10,108 +10,112 @@
     <style>
         body { 
             font-family: 'Inter', sans-serif;
-            background-image: url('https://images.unsplash.com/photo-1554189097-94d7a8d5ab24?q=80&w=2070&auto=format&fit=crop');
+            /* UPDATED: Points to your new background image */
+            background-image: url('image_4c1d8a.jpg');
             background-size: cover;
             background-position: center;
+            background-attachment: fixed;
         }
         .hidden { display: none; }
+        /* UPDATED: Switched to a dark, blurred background for the main card */
         .backdrop-blur-custom {
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            background-color: rgba(17, 24, 39, 0.8); /* Dark semi-transparent background */
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
     </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-    <!-- NEW: Updated Logos -->
+<body class="flex items-center justify-center min-h-screen">
     <div class="absolute top-4 left-4">
         <a href="#">
-            <img src="Screenshot 2025-09-19 201612.png" alt="Logo" class="h-16">
+            <img src="image_4b390e.png" alt="Logo" class="h-16 w-auto">
         </a>
     </div>
      <div class="absolute bottom-4 right-4">
         <a href="#">
-            <img src="Screenshot 2025-09-19 201612.png" alt="Logo" class="h-16">
+            <img src="image_4b390e.png" alt="Logo" class="h-16 w-auto">
         </a>
     </div>
 
-    <div class="backdrop-blur-custom p-8 rounded-lg shadow-xl text-center w-full max-w-lg mx-4">
+    <div class="backdrop-blur-custom p-8 rounded-2xl shadow-2xl text-center w-full max-w-lg mx-4">
         
-        <!-- Main Title Section -->
         <div id="main-title-section">
-            <h1 class="text-4xl font-bold text-gray-800 mb-2">SlideChangerOnline</h1>
-            <p class="text-gray-600 mb-8">The easiest way to present your PDFs, remotely.</p>
+            <!-- UPDATED: Text colors for dark theme -->
+            <h1 class="text-4xl font-bold text-white mb-2">SlideChangerOnline</h1>
+            <p class="text-gray-300 mb-8">The easiest way to present your PDFs, remotely.</p>
         </div>
 
-        <!-- Login Section -->
         <div id="login-section">
-            <p class="mb-4 text-gray-700">Please sign in to continue.</p>
-            <button id="login-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+            <p class="mb-4 text-gray-200">Please sign in to continue.</p>
+            <!-- UPDATED: Button colors to match gold theme -->
+            <button id="login-btn" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 shadow-lg">
                 Sign In with Google
             </button>
         </div>
 
-        <!-- Logged In Section -->
         <div id="logged-in-section" class="hidden">
              <div class="flex justify-center items-center gap-4 mb-6">
-                 <p class="text-lg text-gray-700">Welcome, <span id="user-name" class="font-semibold"></span>!</p>
-                 <a href="./dashboard.html" class="text-sm text-blue-600 hover:underline">Dashboard</a>
-                 <button id="logout-btn" class="text-sm text-blue-600 hover:underline">Sign out</button>
+                 <p class="text-lg text-gray-200">Welcome, <span id="user-name" class="font-semibold text-white"></span>!</p>
+                 <!-- UPDATED: Link colors to match gold theme -->
+                 <a href="./dashboard.html" class="text-sm text-amber-400 hover:text-amber-300 hover:underline">Dashboard</a>
+                 <button id="logout-btn" class="text-sm text-amber-400 hover:text-amber-300 hover:underline">Sign out</button>
             </div>
             
             <div id="upload-section">
-                <p class="mb-4">You're signed in! Upload your PDF to get started.</p>
+                <p class="mb-4 text-gray-200">You're signed in! Upload your PDF to get started.</p>
                 <input type="file" id="pdf-upload" accept=".pdf" class="hidden">
-                <label for="pdf-upload" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg cursor-pointer transition duration-300">
+                <label for="pdf-upload" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-lg cursor-pointer transition duration-300 shadow-lg">
                     Choose your PDF
                 </label>
             </div>
             
             <div id="upload-progress-section" class="hidden mt-6">
-                 <p class="mb-2">Uploading...</p>
-                 <div class="w-full bg-gray-200 rounded-full h-4">
-                     <div id="progress-bar" class="bg-blue-500 h-4 rounded-full" style="width: 0%"></div>
+                 <p class="mb-2 text-gray-200">Uploading...</p>
+                 <div class="w-full bg-gray-700 rounded-full h-4">
+                     <div id="progress-bar" class="bg-amber-500 h-4 rounded-full" style="width: 0%"></div>
                  </div>
-                 <p id="progress-text" class="text-sm mt-1">0%</p>
+                 <p id="progress-text" class="text-sm mt-1 text-gray-300">0%</p>
             </div>
 
-            <div id="links-section" class="hidden mt-8 text-left bg-gray-50 p-6 rounded-lg">
-                <h2 class="text-2xl font-bold text-center mb-4">Your Links are Ready!</h2>
+            <div id="links-section" class="hidden mt-8 text-left bg-gray-800/50 p-6 rounded-lg">
+                <h2 class="text-2xl font-bold text-center text-white mb-4">Your Links are Ready!</h2>
                 <div class="mb-4">
-                    <label class="font-semibold text-gray-700">Presenter Link (for the big screen):</label>
-                    <input id="presenter-link" type="text" readonly class="w-full bg-gray-200 p-2 mt-1 rounded border">
+                    <label class="font-semibold text-gray-200">Presenter Link (for the big screen):</label>
+                    <input id="presenter-link" type="text" readonly class="w-full bg-gray-700 text-white p-2 mt-1 rounded border border-gray-600">
                 </div>
                 <div class="mb-6">
-                    <label class="font-semibold text-gray-700">Remote Link (for your phone):</label>
-                    <input id="remote-link" type="text" readonly class="w-full bg-gray-200 p-2 mt-1 rounded border">
+                    <label class="font-semibold text-gray-200">Remote Link (for your phone):</label>
+                    <input id="remote-link" type="text" readonly class="w-full bg-gray-700 text-white p-2 mt-1 rounded border border-gray-600">
                 </div>
                 
                 <div class="flex flex-col sm:flex-row gap-4 mb-4">
-                    <button id="copy-links-btn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition">Copy Links</button>
+                    <button id="copy-links-btn" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition">Copy Links</button>
                     <button id="show-qr-btn" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition">Show QR Codes</button>
                 </div>
-                 <p id="copy-success" class="text-green-500 text-center text-sm hidden">Links copied to clipboard!</p>
+                 <p id="copy-success" class="text-green-400 text-center text-sm hidden">Links copied to clipboard!</p>
                 
-                <div id="qr-code-section" class="hidden mt-6 pt-4 border-t">
-                    <h3 class="text-lg font-bold text-center mb-4">Scan for Quick Access</h3>
+                <div id="qr-code-section" class="hidden mt-6 pt-4 border-t border-gray-700">
+                    <h3 class="text-lg font-bold text-center text-white mb-4">Scan for Quick Access</h3>
                     <div class="flex justify-around items-center">
                         <div class="text-center">
-                            <p class="font-semibold">Presenter</p>
+                            <p class="font-semibold text-gray-200">Presenter</p>
                             <div id="qr-presenter" class="p-2 bg-white inline-block rounded-lg mt-2"></div>
                         </div>
                         <div class="text-center">
-                            <p class="font-semibold">Remote</p>
+                            <p class="font-semibold text-gray-200">Remote</p>
                             <div id="qr-remote" class="p-2 bg-white inline-block rounded-lg mt-2"></div>
                         </div>
                     </div>
                 </div>
 
-                <p class="text-sm text-gray-500 text-center mt-4">These links will expire in 4 hours.</p>
+                <p class="text-sm text-gray-400 text-center mt-4">These links will expire in 4 hours.</p>
             </div>
         </div>
     </div>
 
     <script type="module">
+        // Firebase and other JavaScript logic remains unchanged.
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
@@ -125,7 +129,7 @@
             messagingSenderId: "1013262596418",
             appId: "1:1013262596418:web:b7c9ee7e6da7545ff370db"
         };
-
+        
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const storage = getStorage(app);
@@ -286,5 +290,4 @@
     </script>
 </body>
 </html>
-
 
