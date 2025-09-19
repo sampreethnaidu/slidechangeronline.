@@ -10,7 +10,6 @@
     <style>
         body { 
             font-family: 'Inter', sans-serif;
-            /* UPDATED: New background image filename */
             background-image: url('Screenshot 2025-09-19 204654.png');
             background-size: cover;
             background-position: center;
@@ -28,13 +27,11 @@
 <body class="flex items-center justify-center min-h-screen p-4">
     <div class="absolute top-4 left-4">
         <a href="#">
-            <!-- UPDATED: New logo filename -->
             <img src="Screenshot 2025-09-19 201612.png" alt="Logo" class="h-16 w-auto">
         </a>
     </div>
      <div class="absolute bottom-4 right-4">
         <a href="#">
-            <!-- UPDATED: New logo filename -->
             <img src="Screenshot 2025-09-19 201612.png" alt="Logo" class="h-16 w-auto">
         </a>
     </div>
@@ -46,7 +43,6 @@
             <p class="text-gray-300 mb-6">The easiest way to present your PDFs, remotely.</p>
         </div>
 
-        <!-- NEW: Join with Code Section -->
         <div id="join-with-code-section" class="mb-8 border-t border-b border-gray-700 py-6">
             <h2 class="text-xl font-semibold text-white mb-3">Join a Session</h2>
             <input type="number" id="session-code-input" placeholder="Enter 8-digit code" class="w-full bg-gray-700 text-white text-center p-3 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500 mb-4" oninput="this.value=this.value.slice(0,8)">
@@ -57,7 +53,6 @@
              <p id="join-error" class="text-red-400 text-sm mt-3 hidden">Invalid or expired code. Please try again.</p>
         </div>
         
-        <!-- Login Section -->
         <div id="login-section">
             <p class="mb-4 text-gray-200">Or, sign in to create a new session.</p>
             <button id="login-btn" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 shadow-lg">
@@ -65,7 +60,6 @@
             </button>
         </div>
 
-        <!-- Logged In Section -->
         <div id="logged-in-section" class="hidden">
              <div class="flex justify-center items-center gap-4 mb-6">
                  <p class="text-lg text-gray-200">Welcome, <span id="user-name" class="font-semibold text-white"></span>!</p>
@@ -91,7 +85,6 @@
             <div id="links-section" class="hidden mt-8 text-left bg-gray-800/50 p-6 rounded-lg">
                 <h2 class="text-2xl font-bold text-center text-white mb-4">Your Session is Ready!</h2>
                 
-                <!-- NEW: Session Code Display -->
                 <div class="mb-4 text-center">
                     <label class="font-semibold text-gray-200">Your Session Code:</label>
                     <p id="session-code-display" class="text-3xl font-bold text-amber-400 tracking-widest mt-1"></p>
@@ -163,7 +156,6 @@
         const progressText = document.getElementById('progress-text');
         const linksSection = document.getElementById('links-section');
 
-        // NEW: Elements for session code joining
         const sessionCodeInput = document.getElementById('session-code-input');
         const joinPresenterBtn = document.getElementById('join-presenter-btn');
         const joinRemoteBtn = document.getElementById('join-remote-btn');
@@ -189,11 +181,9 @@
             if (file) uploadFile(file);
         });
         
-        // NEW: Event listeners for join buttons
         joinPresenterBtn.addEventListener('click', () => joinSession('presenter'));
         joinRemoteBtn.addEventListener('click', () => joinSession('remote'));
 
-        // NEW: Function to join a session using a code
         async function joinSession(type) {
             const code = sessionCodeInput.value;
             if (code.length !== 8) {
@@ -205,7 +195,6 @@
             joinError.classList.add('hidden');
 
             const presentationsRef = collection(db, "presentations");
-            // Find the presentation where the sessionCode matches the input
             const q = query(presentationsRef, where("sessionCode", "==", code), limit(1));
 
             try {
@@ -218,7 +207,7 @@
                     const id = doc.id;
                     const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '');
                     const url = `${baseUrl}${type}.html?id=${id}`;
-                    window.location.href = url; // Redirect the user
+                    window.location.href = url;
                 }
             } catch (error) {
                 console.error("Error finding session:", error);
@@ -263,7 +252,6 @@
             const user = auth.currentUser;
             if (!user) return;
 
-            // NEW: Generate a random 8-digit code
             const sessionCode = Math.floor(10000000 + Math.random() * 90000000).toString();
 
             try {
@@ -273,15 +261,17 @@
                     currentPage: 1,
                     createdAt: serverTimestamp(),
                     expiresAt: new Date(Date.now() + 4 * 60 * 60 * 1000),
-                    sessionCode: sessionCode // NEW: Save the code to the database
+                    sessionCode: sessionCode 
                 };
                 const docRef = await addDoc(collection(db, "presentations"), sessionData);
 
+                // *** UPDATED: Added sessionCode to the history record ***
                 const historyData = {
                     userId: user.uid,
                     fileName: fileName,
                     uploadedAt: serverTimestamp(),
-                    presentationId: docRef.id 
+                    presentationId: docRef.id,
+                    sessionCode: sessionCode // Now we save the code here too
                 };
                 await addDoc(collection(db, "history"), historyData);
 
@@ -306,7 +296,7 @@
 
             presenterLinkInput.value = presenterUrl;
             remoteLinkInput.value = remoteUrl;
-            sessionCodeDisplay.textContent = sessionCode; // NEW: Show the code
+            sessionCodeDisplay.textContent = sessionCode;
             
             uploadProgressSection.classList.add('hidden');
             linksSection.classList.remove('hidden');
