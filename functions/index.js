@@ -56,8 +56,8 @@ exports.createRazorpayOrder = onCall({
     }
 
     const instance = new Razorpay({
-        key_id: "YOUR_KEY_ID",
-        key_secret: "YOUR_KEY_SECRET",
+        key_id: "rzp_live_ROgTLJRTGurfqx",
+        key_secret: "wcNsU5F5ly98RpTAtXgXnl1h",
     });
 
     const options = {
@@ -92,7 +92,7 @@ exports.verifyRazorpayPayment = onCall({
         razorpay_signature
     } = request.data;
     const userId = request.auth.uid;
-    const key_secret = "YOUR_KEY_SECRET";
+    const key_secret = "wcNsU5F5ly98RpTAtXgXnl1h";
 
     const body = razorpay_order_id + "|" + razorpay_payment_id;
 
