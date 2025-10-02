@@ -179,7 +179,18 @@
     </main>
 
     <footer class="w-full text-center p-4">
-        <p class="text-xs text-gray-400">© 2025 Yellapu Sampreeth Naidu. All Rights Reserved.</p>
+        <div class="flex justify-center gap-x-4 gap-y-2 flex-wrap mb-2 text-xs">
+            <a href="./terms.html" class="text-gray-400 hover:text-amber-400 hover:underline">Terms & Conditions</a>
+            <span class="text-gray-500 hidden sm:inline">|</span>
+            <a href="./privacy.html" class="text-gray-400 hover:text-amber-400 hover:underline">Privacy Policy</a>
+            <span class="text-gray-500 hidden sm:inline">|</span>
+            <a href="./refunds.html" class="text-gray-400 hover:text-amber-400 hover:underline">Cancellation & Refunds</a>
+            <span class="text-gray-500 hidden sm:inline">|</span>
+            <a href="./shipping.html" class="text-gray-400 hover:text-amber-400 hover:underline">Shipping Policy</a>
+            <span class="text-gray-500 hidden sm:inline">|</span>
+            <a href="./contact.html" class="text-gray-400 hover:text-amber-400 hover:underline">Contact Us</a>
+        </div>
+        <p class="text-xs text-gray-500">© 2025 Yellapu Sampreeth Naidu. All Rights Reserved.</p>
     </footer>
 
     <script type="module">
@@ -243,7 +254,6 @@
         };
 
         onAuthStateChanged(auth, async (user) => {
-            const joinSection = document.getElementById('join-with-code-section');
             if (user) {
                 authSection.classList.add('hidden');
                 loggedInSection.classList.remove('hidden');
