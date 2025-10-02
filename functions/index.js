@@ -15,7 +15,6 @@ initializeApp();
 
 // --- Function 1: Cleanup Expired Presentations (Existing Function) ---
 exports.cleanupExpiredPresentations = onSchedule("every 60 minutes", async (event) => {
-    // This function's code remains unchanged.
     logger.info("Starting cleanup of expired presentations.");
     const now = new Date();
     const db = getFirestore();
@@ -57,8 +56,8 @@ exports.createRazorpayOrder = onCall({
     }
 
     const instance = new Razorpay({
-        key_id: "rzp_live_ROgTLJRTGurfqx",
-        key_secret: "wcNsU5F5ly98RpTAtXgXnl1h",
+        key_id: "YOUR_KEY_ID",
+        key_secret: "YOUR_KEY_SECRET",
     });
 
     const options = {
@@ -93,7 +92,7 @@ exports.verifyRazorpayPayment = onCall({
         razorpay_signature
     } = request.data;
     const userId = request.auth.uid;
-    const key_secret = "wcNsU5F5ly98RpTAtXgXnl1h";
+    const key_secret = "YOUR_KEY_SECRET";
 
     const body = razorpay_order_id + "|" + razorpay_payment_id;
 
