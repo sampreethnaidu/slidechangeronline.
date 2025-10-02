@@ -47,7 +47,6 @@
     }
     </script>
 </head>
-<!-- UPDATED: Body layout for proper footer placement -->
 <body class="flex flex-col min-h-screen p-4">
     <div class="absolute top-4 left-4 z-20">
         <a href="#">
@@ -60,7 +59,6 @@
         </a>
     </div>
 
-    <!-- UPDATED: Main content wrapper -->
     <main class="flex-grow flex items-center justify-center w-full">
         <div class="backdrop-blur-custom p-8 rounded-2xl shadow-2xl text-center w-full max-w-lg mx-4">
             
@@ -115,9 +113,9 @@
                 
                 <div id="subscription-status" class="mb-6 text-center">
                     <p class="text-gray-400 text-sm">Account Status: <span id="user-tier-display" class="font-semibold text-amber-400">Loading...</span></p>
-                    <button id="upgrade-btn" class="hidden mt-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition shadow-lg">
+                    <a id="upgrade-link-index" href="./pricing.html" class="hidden mt-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition shadow-lg inline-block">
                         Upgrade to Premium
-                    </button>
+                    </a>
                 </div>
                 
                 <div class="my-6 flex items-center">
@@ -180,7 +178,6 @@
         </div>
     </main>
 
-    <!-- UPDATED: Footer is now outside the main content for correct placement -->
     <footer class="w-full text-center p-4">
         <p class="text-xs text-gray-400">© 2025 Yellapu Sampreeth Naidu. All Rights Reserved.</p>
     </footer>
@@ -235,7 +232,7 @@
         const registerEmailBtn = document.getElementById('register-email-btn');
         
         const userTierDisplay = document.getElementById('user-tier-display');
-        const upgradeBtn = document.getElementById('upgrade-btn');
+        const upgradeLinkIndex = document.getElementById('upgrade-link-index');
 
         window.onload = () => {
             const bgImage = new Image();
@@ -246,6 +243,7 @@
         };
 
         onAuthStateChanged(auth, async (user) => {
+            const joinSection = document.getElementById('join-with-code-section');
             if (user) {
                 authSection.classList.add('hidden');
                 loggedInSection.classList.remove('hidden');
@@ -254,9 +252,9 @@
                 const userTier = await getUserTier(user.uid);
                 userTierDisplay.textContent = userTier.charAt(0).toUpperCase() + userTier.slice(1);
                 if (userTier === 'free') {
-                    upgradeBtn.classList.remove('hidden');
+                    upgradeLinkIndex.classList.remove('hidden');
                 } else {
-                    upgradeBtn.classList.add('hidden');
+                    upgradeLinkIndex.classList.add('hidden');
                 }
 
             } else {
@@ -320,10 +318,6 @@
             signInWithEmailAndPassword(auth, email, password)
                 .catch(handleAuthError)
                 .finally(() => setButtonLoading(loginEmailBtn, false));
-        });
-        
-        upgradeBtn.addEventListener('click', () => {
-            alert('Subscription page and payment processing coming soon!');
         });
 
         async function createUserProfile(user) {
