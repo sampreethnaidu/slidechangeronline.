@@ -8,7 +8,6 @@ const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { getStorage } = require("firebase-admin/storage");
 
-// NEW: Import Razorpay and crypto for verification
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
 
@@ -48,20 +47,22 @@ exports.cleanupExpiredPresentations = onSchedule("every 60 minutes", async (even
 });
 
 
-// --- NEW Function 2: Create a Razorpay Payment Order ---
-exports.createRazorpayOrder = onCall(async (request) => {
+// --- UPDATED Function 2: Create a Razorpay Payment Order (with CORS) ---
+exports.createRazorpayOrder = onCall({
+    // This is the fix: explicitly allow your website's domain
+    cors: ["https://www.slidechangeronline.me", "https://slidechangeronline.me"]
+}, async (request) => {
     if (!request.auth) {
         throw new HttpsError("unauthenticated", "You must be logged in to subscribe.");
     }
 
-    // IMPORTANT: Replace with your actual Razorpay Keys from your dashboard
     const instance = new Razorpay({
         key_id: "rzp_live_ROgTLJRTGurfqx",
         key_secret: "wcNsU5F5ly98RpTAtXgXnl1h",
     });
 
     const options = {
-        amount: 2900, // Amount in the smallest currency unit (29 * 100 paise)
+        amount: 2900,
         currency: "INR",
         receipt: `receipt_user_${request.auth.uid}_${Date.now()}`,
     };
@@ -77,8 +78,11 @@ exports.createRazorpayOrder = onCall(async (request) => {
 });
 
 
-// --- NEW Function 3: Verify Razorpay Payment and Fulfill Subscription ---
-exports.verifyRazorpayPayment = onCall(async (request) => {
+// --- UPDATED Function 3: Verify Razorpay Payment (with CORS) ---
+exports.verifyRazorpayPayment = onCall({
+    // This is the fix: explicitly allow your website's domain
+    cors: ["https://www.slidechangeronline.me", "https://slidechangeronline.me"]
+}, async (request) => {
     if (!request.auth) {
         throw new HttpsError("unauthenticated", "You must be logged in.");
     }
@@ -89,7 +93,7 @@ exports.verifyRazorpayPayment = onCall(async (request) => {
         razorpay_signature
     } = request.data;
     const userId = request.auth.uid;
-    const key_secret = "wcNsU5F5ly98RpTAtXgXnl1h"; // IMPORTANT: Use the same Key Secret as above
+    const key_secret = "wcNsU5F5ly98RpTAtXgXnl1h";
 
     const body = razorpay_order_id + "|" + razorpay_payment_id;
 
