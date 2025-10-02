@@ -34,7 +34,7 @@ app.post("/createRazorpayOrder", checkAuth, async (req, res) => {
         key_secret: "wcNsU5F5ly98RpTAtXgXnl1h",
     });
 
-    // *** THIS IS THE ONLY CHANGE AND THE FIX ***
+    // *** THIS IS THE FIX: The receipt ID is now much shorter. ***
     const options = {
         amount: 2900, // 29 INR in paise
         currency: "INR",
@@ -54,7 +54,7 @@ app.post("/createRazorpayOrder", checkAuth, async (req, res) => {
 app.post("/verifyRazorpayPayment", checkAuth, async (req, res) => {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body.data;
     const userId = req.user.uid;
-    const key_secret = "wcNsU5F5ly98RpTAtXgXnl1h"; // Ensure this matches your Razorpay secret
+    const key_secret = "wcNsU5F5ly98RpTAtXgXnl1h";
 
     const body = razorpay_order_id + "|" + razorpay_payment_id;
     const expectedSignature = crypto.createHmac("sha256", key_secret).update(body.toString()).digest("hex");
