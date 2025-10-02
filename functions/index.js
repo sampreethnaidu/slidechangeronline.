@@ -10,14 +10,9 @@ const crypto = require("crypto");
 
 admin.initializeApp();
 
-// --- Main API App ---
 const app = express();
-
-// Use CORS middleware to automatically handle preflight requests.
-// This is the core of the fix, allowing your website to make requests.
 app.use(cors({ origin: ["https://www.slidechangeronline.me", "https://slidechangeronline.me"] }));
 
-// Middleware to check for Firebase authentication on incoming requests.
 const checkAuth = async (req, res, next) => {
     const tokenId = req.get("Authorization")?.split("Bearer ")[1];
     if (!tokenId) {
@@ -25,33 +20,30 @@ const checkAuth = async (req, res, next) => {
     }
     try {
         const decodedToken = await admin.auth().verifyIdToken(tokenId);
-        req.user = decodedToken; // Add user info to the request for later use.
-        next(); // Proceed to the next function if the token is valid.
+        req.user = decodedToken;
+        next();
     } catch (error) {
         logger.error("Auth error:", error);
         return res.status(401).send({ error: "Unauthorized: Invalid token." });
     }
 };
 
-// --- API Routes ---
-
-// Route to create a Razorpay order. It requires a user to be authenticated.
 app.post("/createRazorpayOrder", checkAuth, async (req, res) => {
     const instance = new Razorpay({
         key_id: "rzp_live_ROgTLJRTGurfqx",
         key_secret: "wcNsU5F5ly98RpTAtXgXnl1h",
     });
 
+    // *** THIS IS THE ONLY CHANGE AND THE FIX ***
     const options = {
         amount: 2900, // 29 INR in paise
         currency: "INR",
-        receipt: `receipt_user_${req.user.uid}_${Date.now()}`,
+        receipt: `receipt_${req.user.uid}`, // Shortened to be under 40 characters
     };
 
     try {
         const order = await instance.orders.create(options);
         logger.info("Razorpay order created:", order.id);
-        // Important: onRequest functions must send back a `data` object.
         res.status(200).send({ data: { orderId: order.id } });
     } catch (error) {
         logger.error("Error creating Razorpay order:", error);
@@ -59,9 +51,7 @@ app.post("/createRazorpayOrder", checkAuth, async (req, res) => {
     }
 });
 
-// Route to verify the payment after the user completes it on Razorpay.
 app.post("/verifyRazorpayPayment", checkAuth, async (req, res) => {
-    // Note: data is now in req.body.data
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body.data;
     const userId = req.user.uid;
     const key_secret = "wcNsU5F5ly98RpTAtXgXnl1h"; // Ensure this matches your Razorpay secret
@@ -83,11 +73,8 @@ app.post("/verifyRazorpayPayment", checkAuth, async (req, res) => {
     }
 });
 
-// Export the Express API as a single, powerful Cloud Function named "api".
 exports.api = onRequest({ region: "us-central1" }, app);
 
-
-// --- Cleanup Function (Remains the same, but using the new admin SDK initialization) ---
 exports.cleanupExpiredPresentations = onSchedule("every 60 minutes", async (event) => {
     logger.info("Starting cleanup of expired presentations.");
     const now = new Date();
