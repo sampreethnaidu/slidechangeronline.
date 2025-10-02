@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- UPDATED: SEO Title -->
+    <!-- SEO Title -->
     <title>SlideChangerOnline | Present PDFs Remotely with Your Phone</title>
 
-    <!-- NEW: SEO Meta Tags -->
+    <!-- SEO Meta Tags -->
     <meta name="description" content="A free online tool to present your PDF files on any screen and use your phone as a secure remote control. No downloads, no USB drives. Just upload and present.">
     <meta name="keywords" content="pdf presenter, remote presentation, online slide changer, phone as remote, pdf slides, web presenter">
 
@@ -31,7 +31,7 @@
         }
     </style>
 
-    <!-- NEW: Structured Data for Rich Search Results -->
+    <!-- Structured Data for Rich Search Results -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -68,6 +68,7 @@
             <p class="text-gray-300 mb-6">The easiest way to present your PDFs, remotely.</p>
         </div>
 
+        <!-- Join with Code Section (Now always visible) -->
         <div id="join-with-code-section" class="mb-8 border-t border-b border-gray-700 py-6">
             <h2 class="text-xl font-semibold text-white mb-3">Join a Session</h2>
             <input type="number" id="session-code-input" placeholder="Enter 8-digit code" class="w-full bg-gray-700 text-white text-center p-3 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500 mb-4" oninput="this.value=this.value.slice(0,8)">
@@ -78,14 +79,16 @@
              <p id="join-error" class="text-red-400 text-sm mt-3 hidden">Invalid or expired code. Please try again.</p>
         </div>
         
+        <!-- Login & Register Section -->
         <div id="auth-section">
+            <p class="mb-4 text-gray-200">Or, sign in to create your own session.</p>
+            <!-- Forms are inside this div -->
             <div id="login-form">
                  <input type="email" id="login-email" placeholder="Email" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-3 text-center">
                  <input type="password" id="login-password" placeholder="Password" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-4 text-center">
                  <button id="login-email-btn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-lg transition mb-3">Sign In</button>
                  <p class="text-sm text-gray-400">Don't have an account? <button id="show-register-btn" class="text-amber-400 hover:underline">Create one</button></p>
             </div>
-
             <div id="register-form" class="hidden">
                  <input type="text" id="register-name" placeholder="Your Name" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-3 text-center">
                  <input type="email" id="register-email" placeholder="Email" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-3 text-center">
@@ -93,21 +96,19 @@
                  <button id="register-email-btn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-lg transition mb-3">Create Account</button>
                  <p class="text-sm text-gray-400">Already have an account? <button id="show-login-btn" class="text-amber-400 hover:underline">Sign In</button></p>
             </div>
-
              <p id="auth-error" class="text-red-400 text-sm mt-3 hidden"></p>
-
             <div class="my-6 flex items-center">
                 <div class="flex-grow border-t border-gray-600"></div>
                 <span class="flex-shrink mx-4 text-gray-400">OR</span>
                 <div class="flex-grow border-t border-gray-600"></div>
             </div>
-
             <button id="login-google-btn" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg transition duration-300 flex items-center justify-center gap-2">
                  <svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></svg>
                 Sign In with Google
             </button>
         </div>
 
+        <!-- Logged In Section (for creating new sessions) -->
         <div id="logged-in-section" class="hidden">
              <div class="flex justify-center items-center gap-4 mb-6">
                  <p class="text-lg text-gray-200">Welcome, <span id="user-name" class="font-semibold text-white"></span>!</p>
@@ -115,10 +116,18 @@
                  <button id="logout-btn" class="text-sm text-amber-400 hover:text-amber-300 hover:underline">Sign out</button>
             </div>
             
+            <!-- Divider for logged-in users -->
+            <div class="my-6 flex items-center">
+                <div class="flex-grow border-t border-gray-600"></div>
+                <span class="flex-shrink mx-4 text-gray-400 text-sm">CREATE</span>
+                <div class="flex-grow border-t border-gray-600"></div>
+            </div>
+            
+            <h2 class="text-xl font-semibold text-white mb-4">Create a New Session</h2>
             <div id="upload-section">
                 <input type="file" id="pdf-upload" accept=".pdf" class="hidden">
                 <label for="pdf-upload" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-lg cursor-pointer transition duration-300 shadow-lg">
-                    Choose PDF to Create Session
+                    Choose PDF
                 </label>
             </div>
             
@@ -172,6 +181,11 @@
         </div>
     </div>
 
+    <!-- Copyright Footer -->
+    <footer class="absolute bottom-0 w-full text-center p-4">
+        <p class="text-xs text-gray-400">© 2025 Yellapu Sampreeth Naidu. All Rights Reserved.</p>
+    </footer>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { 
@@ -217,17 +231,15 @@
         const loginEmailBtn = document.getElementById('login-email-btn');
         const registerEmailBtn = document.getElementById('register-email-btn');
 
+        // --- UPDATED Auth State Logic ---
         onAuthStateChanged(auth, (user) => {
-            const joinSection = document.getElementById('join-with-code-section');
             if (user) {
-                joinSection.classList.add('hidden');
-                authSection.classList.add('hidden');
-                loggedInSection.classList.remove('hidden');
+                authSection.classList.add('hidden'); // Hide login forms
+                loggedInSection.classList.remove('hidden'); // Show create session area
                 userName.textContent = user.displayName || user.email;
             } else {
-                joinSection.classList.remove('hidden');
-                authSection.classList.remove('hidden');
-                loggedInSection.classList.add('hidden');
+                authSection.classList.remove('hidden'); // Show login forms
+                loggedInSection.classList.add('hidden'); // Hide create session area
                 userName.textContent = '';
             }
         });
@@ -447,5 +459,4 @@
     </script>
 </body>
 </html>
-
 
