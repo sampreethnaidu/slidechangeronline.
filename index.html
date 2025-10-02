@@ -4,10 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- SEO Title -->
     <title>SlideChangerOnline | Present PDFs Remotely with Your Phone</title>
-
-    <!-- SEO Meta Tags -->
     <meta name="description" content="A free online tool to present your PDF files on any screen and use your phone as a secure remote control. No downloads, no USB drives. Just upload and present.">
     <meta name="keywords" content="pdf presenter, remote presentation, online slide changer, phone as remote, pdf slides, web presenter">
 
@@ -17,12 +14,11 @@
     <style>
         body { 
             font-family: 'Inter', sans-serif;
-            /* UPDATED: Start with a solid color for fast loading */
-            background-color: #111827; /* Dark Gray */
+            background-color: #111827;
+            background-image: url('Screenshot 2025-09-19 204654.png');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
-            /* UPDATED: Smooth transition for background image */
             transition: background-image 1s ease-in-out;
         }
         .hidden { display: none; }
@@ -32,19 +28,8 @@
             background-color: rgba(17, 24, 39, 0.8);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        /* UPDATED: Transition for showing/hiding sections */
-        .view-section {
-            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
-        }
-        .view-section.hidden {
-            opacity: 0;
-            transform: scale(0.95);
-            pointer-events: none;
-            position: absolute;
-        }
     </style>
 
-    <!-- Structured Data for Rich Search Results -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -62,131 +47,141 @@
     }
     </script>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
-    <div class="absolute top-4 left-4">
+<!-- UPDATED: Body layout for proper footer placement -->
+<body class="flex flex-col min-h-screen p-4">
+    <div class="absolute top-4 left-4 z-20">
         <a href="#">
             <img src="Screenshot 2025-09-19 201612.png" alt="Logo" class="h-16 w-auto">
         </a>
     </div>
-     <div class="absolute bottom-4 right-4">
+     <div class="absolute bottom-4 right-4 z-20">
         <a href="#">
             <img src="Screenshot 2025-09-19 201612.png" alt="Logo" class="h-16 w-auto">
         </a>
     </div>
 
-    <div class="backdrop-blur-custom p-8 rounded-2xl shadow-2xl text-center w-full max-w-lg mx-4">
-        
-        <div id="main-title-section">
-            <h1 class="text-4xl font-bold text-white mb-2">SlideChangerOnline</h1>
-            <p class="text-gray-300 mb-6">The easiest way to present your PDFs, remotely.</p>
-        </div>
-
-        <div id="join-with-code-section" class="mb-8 border-t border-b border-gray-700 py-6">
-             <h2 class="text-xl font-semibold text-white mb-3">Join a Session</h2>
-            <input type="number" id="session-code-input" placeholder="Enter 8-digit code" class="w-full bg-gray-700 text-white text-center p-3 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500 mb-4" oninput="this.value=this.value.slice(0,8)">
-            <div class="flex gap-4">
-                <button id="join-presenter-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition">Join as Presenter</button>
-                <button id="join-remote-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition">Join as Remote</button>
-            </div>
-             <p id="join-error" class="text-red-400 text-sm mt-3 hidden">Invalid or expired code. Please try again.</p>
-        </div>
-        
-        <!-- UPDATED: Added view-section class for transitions -->
-        <div id="auth-section" class="view-section">
-            <p class="mb-4 text-gray-200">Or, sign in to create your own session.</p>
-            <div id="login-form">
-                 <input type="email" id="login-email" placeholder="Email" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-3 text-center">
-                 <input type="password" id="login-password" placeholder="Password" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-4 text-center">
-                 <button id="login-email-btn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-lg transition mb-3 flex items-center justify-center">Sign In</button>
-                 <p class="text-sm text-gray-400">Don't have an account? <button id="show-register-btn" class="text-amber-400 hover:underline">Create one</button></p>
-            </div>
-            <div id="register-form" class="hidden">
-                 <input type="text" id="register-name" placeholder="Your Name" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-3 text-center">
-                 <input type="email" id="register-email" placeholder="Email" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-3 text-center">
-                 <input type="password" id="register-password" placeholder="Password" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-4 text-center">
-                 <button id="register-email-btn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-lg transition mb-3 flex items-center justify-center">Create Account</button>
-                 <p class="text-sm text-gray-400">Already have an account? <button id="show-login-btn" class="text-amber-400 hover:underline">Sign In</button></p>
-            </div>
-             <p id="auth-error" class="text-red-400 text-sm mt-3 hidden"></p>
-            <div class="my-6 flex items-center">
-                <div class="flex-grow border-t border-gray-600"></div>
-                <span class="flex-shrink mx-4 text-gray-400">OR</span>
-                <div class="flex-grow border-t border-gray-600"></div>
-            </div>
-            <button id="login-google-btn" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg transition duration-300 flex items-center justify-center gap-2">
-                 <svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></svg>
-                Sign In with Google
-            </button>
-        </div>
-
-        <!-- UPDATED: Added view-section class for transitions -->
-        <div id="logged-in-section" class="view-section hidden">
-             <div class="flex justify-center items-center gap-4 mb-6">
-                 <p class="text-lg text-gray-200">Welcome, <span id="user-name" class="font-semibold text-white"></span>!</p>
-                 <a href="./dashboard.html" class="text-sm text-amber-400 hover:text-amber-300 hover:underline">Dashboard</a>
-                 <button id="logout-btn" class="text-sm text-amber-400 hover:text-amber-300 hover:underline">Sign out</button>
-            </div>
+    <!-- UPDATED: Main content wrapper -->
+    <main class="flex-grow flex items-center justify-center w-full">
+        <div class="backdrop-blur-custom p-8 rounded-2xl shadow-2xl text-center w-full max-w-lg mx-4">
             
-            <div class="my-6 flex items-center">
-                <div class="flex-grow border-t border-gray-600"></div>
-                <span class="flex-shrink mx-4 text-gray-400 text-sm">CREATE</span>
-                <div class="flex-grow border-t border-gray-600"></div>
-            </div>
-            
-            <h2 class="text-xl font-semibold text-white mb-4">Create a New Session</h2>
-            <div id="upload-section">
-                <input type="file" id="pdf-upload" accept=".pdf" class="hidden">
-                <label for="pdf-upload" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-lg cursor-pointer transition duration-300 shadow-lg">
-                    Choose PDF
-                </label>
-            </div>
-            
-            <div id="upload-progress-section" class="hidden mt-6">
-                 <p class="mb-2 text-gray-200">Uploading...</p>
-                 <div class="w-full bg-gray-700 rounded-full h-4">
-                     <div id="progress-bar" class="bg-amber-500 h-4 rounded-full" style="width: 0%"></div>
-                 </div>
-                 <p id="progress-text" class="text-sm mt-1 text-gray-300">0%</p>
+            <div id="main-title-section">
+                <h1 class="text-4xl font-bold text-white mb-2">SlideChangerOnline</h1>
+                <p class="text-gray-300 mb-6">The easiest way to present your PDFs, remotely.</p>
             </div>
 
-            <div id="links-section" class="hidden mt-8 text-left bg-gray-800/50 p-6 rounded-lg">
-                <h2 class="text-2xl font-bold text-center text-white mb-4">Your Session is Ready!</h2>
-                <div class="mb-4 text-center">
-                    <label class="font-semibold text-gray-200">Your Session Code:</label>
-                    <p id="session-code-display" class="text-3xl font-bold text-amber-400 tracking-widest mt-1"></p>
+            <div id="join-with-code-section" class="mb-8 border-t border-b border-gray-700 py-6">
+                <h2 class="text-xl font-semibold text-white mb-3">Join a Session</h2>
+                <input type="number" id="session-code-input" placeholder="Enter 8-digit code" class="w-full bg-gray-700 text-white text-center p-3 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500 mb-4" oninput="this.value=this.value.slice(0,8)">
+                <div class="flex gap-4">
+                    <button id="join-presenter-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition">Join as Presenter</button>
+                    <button id="join-remote-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition">Join as Remote</button>
                 </div>
-                <div class="mb-4">
-                    <label class="font-semibold text-gray-200">Presenter Link:</label>
-                    <input id="presenter-link" type="text" readonly class="w-full bg-gray-700 text-white p-2 mt-1 rounded border border-gray-600">
+                <p id="join-error" class="text-red-400 text-sm mt-3 hidden">Invalid or expired code. Please try again.</p>
+            </div>
+            
+            <div id="auth-section">
+                <p class="mb-4 text-gray-200">Or, sign in to create your own session.</p>
+                <div id="login-form">
+                    <input type="email" id="login-email" placeholder="Email" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-3 text-center">
+                    <input type="password" id="login-password" placeholder="Password" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-4 text-center">
+                    <button id="login-email-btn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-lg transition mb-3 flex items-center justify-center">Sign In</button>
+                    <p class="text-sm text-gray-400">Don't have an account? <button id="show-register-btn" class="text-amber-400 hover:underline">Create one</button></p>
                 </div>
-                <div class="mb-6">
-                    <label class="font-semibold text-gray-200">Remote Link:</label>
-                    <input id="remote-link" type="text" readonly class="w-full bg-gray-700 text-white p-2 mt-1 rounded border border-gray-600">
+                <div id="register-form" class="hidden">
+                    <input type="text" id="register-name" placeholder="Your Name" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-3 text-center">
+                    <input type="email" id="register-email" placeholder="Email" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-3 text-center">
+                    <input type="password" id="register-password" placeholder="Password" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-4 text-center">
+                    <button id="register-email-btn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-lg transition mb-3 flex items-center justify-center">Create Account</button>
+                    <p class="text-sm text-gray-400">Already have an account? <button id="show-login-btn" class="text-amber-400 hover:underline">Sign In</button></p>
                 </div>
-                <div class="flex flex-col sm:flex-row gap-4 mb-4">
-                    <button id="copy-links-btn" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition">Copy Info</button>
-                    <button id="show-qr-btn" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition">Show QR Codes</button>
+                <p id="auth-error" class="text-red-400 text-sm mt-3 hidden"></p>
+                <div class="my-6 flex items-center">
+                    <div class="flex-grow border-t border-gray-600"></div>
+                    <span class="flex-shrink mx-4 text-gray-400">OR</span>
+                    <div class="flex-grow border-t border-gray-600"></div>
                 </div>
-                 <p id="copy-success" class="text-green-400 text-center text-sm hidden">Session info copied to clipboard!</p>
-                <div id="qr-code-section" class="hidden mt-6 pt-4 border-t border-gray-700">
-                    <h3 class="text-lg font-bold text-center text-white mb-4">Scan for Quick Access</h3>
-                    <div class="flex justify-around items-center">
-                        <div class="text-center">
-                            <p class="font-semibold text-gray-200">Presenter</p>
-                            <div id="qr-presenter" class="p-2 bg-white inline-block rounded-lg mt-2"></div>
-                        </div>
-                        <div class="text-center">
-                            <p class="font-semibold text-gray-200">Remote</p>
-                            <div id="qr-remote" class="p-2 bg-white inline-block rounded-lg mt-2"></div>
+                <button id="login-google-btn" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg transition duration-300 flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></svg>
+                    Sign In with Google
+                </button>
+            </div>
+
+            <div id="logged-in-section" class="hidden">
+                <div class="flex justify-center items-center gap-4 mb-2">
+                    <p class="text-lg text-gray-200">Welcome, <span id="user-name" class="font-semibold text-white"></span>!</p>
+                    <a href="./dashboard.html" class="text-sm text-amber-400 hover:text-amber-300 hover:underline">Dashboard</a>
+                    <button id="logout-btn" class="text-sm text-amber-400 hover:text-amber-300 hover:underline">Sign out</button>
+                </div>
+                
+                <div id="subscription-status" class="mb-6 text-center">
+                    <p class="text-gray-400 text-sm">Account Status: <span id="user-tier-display" class="font-semibold text-amber-400">Loading...</span></p>
+                    <button id="upgrade-btn" class="hidden mt-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition shadow-lg">
+                        Upgrade to Premium
+                    </button>
+                </div>
+                
+                <div class="my-6 flex items-center">
+                    <div class="flex-grow border-t border-gray-600"></div>
+                    <span class="flex-shrink mx-4 text-gray-400 text-sm">CREATE</span>
+                    <div class="flex-grow border-t border-gray-600"></div>
+                </div>
+                
+                <h2 class="text-xl font-semibold text-white mb-4">Create a New Session</h2>
+                <div id="upload-section">
+                    <input type="file" id="pdf-upload" accept=".pdf" class="hidden">
+                    <label for="pdf-upload" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-lg cursor-pointer transition duration-300 shadow-lg">
+                        Choose PDF
+                    </label>
+                </div>
+                
+                <div id="upload-progress-section" class="hidden mt-6">
+                    <p class="mb-2 text-gray-200">Uploading...</p>
+                    <div class="w-full bg-gray-700 rounded-full h-4">
+                        <div id="progress-bar" class="bg-amber-500 h-4 rounded-full" style="width: 0%"></div>
+                    </div>
+                    <p id="progress-text" class="text-sm mt-1 text-gray-300">0%</p>
+                </div>
+
+                <div id="links-section" class="hidden mt-8 text-left bg-gray-800/50 p-6 rounded-lg">
+                    <h2 class="text-2xl font-bold text-center text-white mb-4">Your Session is Ready!</h2>
+                    <div class="mb-4 text-center">
+                        <label class="font-semibold text-gray-200">Your Session Code:</label>
+                        <p id="session-code-display" class="text-3xl font-bold text-amber-400 tracking-widest mt-1"></p>
+                    </div>
+                    <div class="mb-4">
+                        <label class="font-semibold text-gray-200">Presenter Link:</label>
+                        <input id="presenter-link" type="text" readonly class="w-full bg-gray-700 text-white p-2 mt-1 rounded border border-gray-600">
+                    </div>
+                    <div class="mb-6">
+                        <label class="font-semibold text-gray-200">Remote Link:</label>
+                        <input id="remote-link" type="text" readonly class="w-full bg-gray-700 text-white p-2 mt-1 rounded border border-gray-600">
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-4 mb-4">
+                        <button id="copy-links-btn" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition">Copy Info</button>
+                        <button id="show-qr-btn" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition">Show QR Codes</button>
+                    </div>
+                    <p id="copy-success" class="text-green-400 text-center text-sm hidden">Session info copied to clipboard!</p>
+                    <div id="qr-code-section" class="hidden mt-6 pt-4 border-t border-gray-700">
+                        <h3 class="text-lg font-bold text-center text-white mb-4">Scan for Quick Access</h3>
+                        <div class="flex justify-around items-center">
+                            <div class="text-center">
+                                <p class="font-semibold text-gray-200">Presenter</p>
+                                <div id="qr-presenter" class="p-2 bg-white inline-block rounded-lg mt-2"></div>
+                            </div>
+                            <div class="text-center">
+                                <p class="font-semibold text-gray-200">Remote</p>
+                                <div id="qr-remote" class="p-2 bg-white inline-block rounded-lg mt-2"></div>
+                            </div>
                         </div>
                     </div>
+                    <p id="expiry-message" class="text-sm text-gray-400 text-center mt-4">This session will expire in 4 hours.</p>
                 </div>
-                <p class="text-sm text-gray-400 text-center mt-4">This session will expire in 4 hours.</p>
             </div>
         </div>
-    </div>
+    </main>
 
-    <footer class="absolute bottom-0 w-full text-center p-4">
+    <!-- UPDATED: Footer is now outside the main content for correct placement -->
+    <footer class="w-full text-center p-4">
         <p class="text-xs text-gray-400">© 2025 Yellapu Sampreeth Naidu. All Rights Reserved.</p>
     </footer>
 
@@ -238,8 +233,10 @@
         const loginGoogleBtn = document.getElementById('login-google-btn');
         const loginEmailBtn = document.getElementById('login-email-btn');
         const registerEmailBtn = document.getElementById('register-email-btn');
+        
+        const userTierDisplay = document.getElementById('user-tier-display');
+        const upgradeBtn = document.getElementById('upgrade-btn');
 
-        // --- UPDATED: Lazy Load Background ---
         window.onload = () => {
             const bgImage = new Image();
             bgImage.src = 'Screenshot 2025-09-19 204654.png';
@@ -248,11 +245,20 @@
             };
         };
 
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
                 authSection.classList.add('hidden');
                 loggedInSection.classList.remove('hidden');
                 userName.textContent = user.displayName || user.email;
+
+                const userTier = await getUserTier(user.uid);
+                userTierDisplay.textContent = userTier.charAt(0).toUpperCase() + userTier.slice(1);
+                if (userTier === 'free') {
+                    upgradeBtn.classList.remove('hidden');
+                } else {
+                    upgradeBtn.classList.add('hidden');
+                }
+
             } else {
                 authSection.classList.remove('hidden');
                 loggedInSection.classList.add('hidden');
@@ -272,7 +278,6 @@
             authError.classList.add('hidden');
         });
 
-        // --- UPDATED: Button Loading States ---
         const spinner = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
 
         function setButtonLoading(button, isLoading) {
@@ -281,7 +286,6 @@
                 button.innerHTML = spinner + 'Processing...';
             } else {
                 button.disabled = false;
-                // Restore original text
                 if(button.id === 'login-email-btn') button.textContent = 'Sign In';
                 if(button.id === 'register-email-btn') button.textContent = 'Create Account';
             }
@@ -302,7 +306,7 @@
                 .then((userCredential) => {
                     return updateProfile(userCredential.user, { displayName: name })
                         .then(() => {
-                            createUserProfile(userCredential.user); // Create firestore profile
+                            createUserProfile(userCredential.user);
                         });
                 })
                 .catch(handleAuthError)
@@ -316,6 +320,10 @@
             signInWithEmailAndPassword(auth, email, password)
                 .catch(handleAuthError)
                 .finally(() => setButtonLoading(loginEmailBtn, false));
+        });
+        
+        upgradeBtn.addEventListener('click', () => {
+            alert('Subscription page and payment processing coming soon!');
         });
 
         async function createUserProfile(user) {
@@ -401,6 +409,7 @@
         }
 
         async function getUserTier(userId) {
+            if (!userId) return "free";
             const userRef = doc(db, "users", userId);
             const userDoc = await getDoc(userRef);
             return userDoc.exists() ? userDoc.data().accountTier || "free" : "free";
@@ -479,7 +488,7 @@
             const showQrBtn = document.getElementById('show-qr-btn');
             const qrCodeSection = document.getElementById('qr-code-section');
             const copySuccess = document.getElementById('copy-success');
-            const expiryMessage = document.querySelector('#links-section p:last-child');
+            const expiryMessage = document.getElementById('expiry-message');
 
             const presenterUrl = `${baseUrl}presenter.html?id=${id}`;
             const remoteUrl = `${baseUrl}remote.html?id=${id}`;
