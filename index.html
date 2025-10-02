@@ -17,10 +17,13 @@
     <style>
         body { 
             font-family: 'Inter', sans-serif;
-            background-image: url('Screenshot 2025-09-19 204654.png');
+            /* UPDATED: Start with a solid color for fast loading */
+            background-color: #111827; /* Dark Gray */
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
+            /* UPDATED: Smooth transition for background image */
+            transition: background-image 1s ease-in-out;
         }
         .hidden { display: none; }
         .backdrop-blur-custom {
@@ -28,6 +31,16 @@
             -webkit-backdrop-filter: blur(12px);
             background-color: rgba(17, 24, 39, 0.8);
             border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        /* UPDATED: Transition for showing/hiding sections */
+        .view-section {
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+        }
+        .view-section.hidden {
+            opacity: 0;
+            transform: scale(0.95);
+            pointer-events: none;
+            position: absolute;
         }
     </style>
 
@@ -68,9 +81,8 @@
             <p class="text-gray-300 mb-6">The easiest way to present your PDFs, remotely.</p>
         </div>
 
-        <!-- Join with Code Section (Now always visible) -->
         <div id="join-with-code-section" class="mb-8 border-t border-b border-gray-700 py-6">
-            <h2 class="text-xl font-semibold text-white mb-3">Join a Session</h2>
+             <h2 class="text-xl font-semibold text-white mb-3">Join a Session</h2>
             <input type="number" id="session-code-input" placeholder="Enter 8-digit code" class="w-full bg-gray-700 text-white text-center p-3 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500 mb-4" oninput="this.value=this.value.slice(0,8)">
             <div class="flex gap-4">
                 <button id="join-presenter-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition">Join as Presenter</button>
@@ -79,21 +91,20 @@
              <p id="join-error" class="text-red-400 text-sm mt-3 hidden">Invalid or expired code. Please try again.</p>
         </div>
         
-        <!-- Login & Register Section -->
-        <div id="auth-section">
+        <!-- UPDATED: Added view-section class for transitions -->
+        <div id="auth-section" class="view-section">
             <p class="mb-4 text-gray-200">Or, sign in to create your own session.</p>
-            <!-- Forms are inside this div -->
             <div id="login-form">
                  <input type="email" id="login-email" placeholder="Email" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-3 text-center">
                  <input type="password" id="login-password" placeholder="Password" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-4 text-center">
-                 <button id="login-email-btn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-lg transition mb-3">Sign In</button>
+                 <button id="login-email-btn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-lg transition mb-3 flex items-center justify-center">Sign In</button>
                  <p class="text-sm text-gray-400">Don't have an account? <button id="show-register-btn" class="text-amber-400 hover:underline">Create one</button></p>
             </div>
             <div id="register-form" class="hidden">
                  <input type="text" id="register-name" placeholder="Your Name" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-3 text-center">
                  <input type="email" id="register-email" placeholder="Email" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-3 text-center">
                  <input type="password" id="register-password" placeholder="Password" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-4 text-center">
-                 <button id="register-email-btn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-lg transition mb-3">Create Account</button>
+                 <button id="register-email-btn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-lg transition mb-3 flex items-center justify-center">Create Account</button>
                  <p class="text-sm text-gray-400">Already have an account? <button id="show-login-btn" class="text-amber-400 hover:underline">Sign In</button></p>
             </div>
              <p id="auth-error" class="text-red-400 text-sm mt-3 hidden"></p>
@@ -108,15 +119,14 @@
             </button>
         </div>
 
-        <!-- Logged In Section (for creating new sessions) -->
-        <div id="logged-in-section" class="hidden">
+        <!-- UPDATED: Added view-section class for transitions -->
+        <div id="logged-in-section" class="view-section hidden">
              <div class="flex justify-center items-center gap-4 mb-6">
                  <p class="text-lg text-gray-200">Welcome, <span id="user-name" class="font-semibold text-white"></span>!</p>
                  <a href="./dashboard.html" class="text-sm text-amber-400 hover:text-amber-300 hover:underline">Dashboard</a>
                  <button id="logout-btn" class="text-sm text-amber-400 hover:text-amber-300 hover:underline">Sign out</button>
             </div>
             
-            <!-- Divider for logged-in users -->
             <div class="my-6 flex items-center">
                 <div class="flex-grow border-t border-gray-600"></div>
                 <span class="flex-shrink mx-4 text-gray-400 text-sm">CREATE</span>
@@ -141,12 +151,10 @@
 
             <div id="links-section" class="hidden mt-8 text-left bg-gray-800/50 p-6 rounded-lg">
                 <h2 class="text-2xl font-bold text-center text-white mb-4">Your Session is Ready!</h2>
-                
                 <div class="mb-4 text-center">
                     <label class="font-semibold text-gray-200">Your Session Code:</label>
                     <p id="session-code-display" class="text-3xl font-bold text-amber-400 tracking-widest mt-1"></p>
                 </div>
-
                 <div class="mb-4">
                     <label class="font-semibold text-gray-200">Presenter Link:</label>
                     <input id="presenter-link" type="text" readonly class="w-full bg-gray-700 text-white p-2 mt-1 rounded border border-gray-600">
@@ -155,13 +163,11 @@
                     <label class="font-semibold text-gray-200">Remote Link:</label>
                     <input id="remote-link" type="text" readonly class="w-full bg-gray-700 text-white p-2 mt-1 rounded border border-gray-600">
                 </div>
-                
                 <div class="flex flex-col sm:flex-row gap-4 mb-4">
                     <button id="copy-links-btn" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition">Copy Info</button>
                     <button id="show-qr-btn" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition">Show QR Codes</button>
                 </div>
                  <p id="copy-success" class="text-green-400 text-center text-sm hidden">Session info copied to clipboard!</p>
-                
                 <div id="qr-code-section" class="hidden mt-6 pt-4 border-t border-gray-700">
                     <h3 class="text-lg font-bold text-center text-white mb-4">Scan for Quick Access</h3>
                     <div class="flex justify-around items-center">
@@ -175,13 +181,11 @@
                         </div>
                     </div>
                 </div>
-
                 <p class="text-sm text-gray-400 text-center mt-4">This session will expire in 4 hours.</p>
             </div>
         </div>
     </div>
 
-    <!-- Copyright Footer -->
     <footer class="absolute bottom-0 w-full text-center p-4">
         <p class="text-xs text-gray-400">© 2025 Yellapu Sampreeth Naidu. All Rights Reserved.</p>
     </footer>
@@ -196,10 +200,14 @@
             onAuthStateChanged,
             createUserWithEmailAndPassword,
             signInWithEmailAndPassword,
-            updateProfile
+            updateProfile,
+            getAdditionalUserInfo
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-        import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { 
+            getFirestore, collection, addDoc, serverTimestamp, 
+            query, where, getDocs, limit, doc, setDoc, getDoc
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCtlgsNhCEsKLHA-WmfoqQleW_n2kCQerI",
@@ -231,15 +239,23 @@
         const loginEmailBtn = document.getElementById('login-email-btn');
         const registerEmailBtn = document.getElementById('register-email-btn');
 
-        // --- UPDATED Auth State Logic ---
+        // --- UPDATED: Lazy Load Background ---
+        window.onload = () => {
+            const bgImage = new Image();
+            bgImage.src = 'Screenshot 2025-09-19 204654.png';
+            bgImage.onload = () => {
+                document.body.style.backgroundImage = `url('${bgImage.src}')`;
+            };
+        };
+
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                authSection.classList.add('hidden'); // Hide login forms
-                loggedInSection.classList.remove('hidden'); // Show create session area
+                authSection.classList.add('hidden');
+                loggedInSection.classList.remove('hidden');
                 userName.textContent = user.displayName || user.email;
             } else {
-                authSection.classList.remove('hidden'); // Show login forms
-                loggedInSection.classList.add('hidden'); // Hide create session area
+                authSection.classList.remove('hidden');
+                loggedInSection.classList.add('hidden');
                 userName.textContent = '';
             }
         });
@@ -256,7 +272,22 @@
             authError.classList.add('hidden');
         });
 
-        loginGoogleBtn.addEventListener('click', () => signInWithPopup(auth, provider).catch(handleAuthError));
+        // --- UPDATED: Button Loading States ---
+        const spinner = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+
+        function setButtonLoading(button, isLoading) {
+            if (isLoading) {
+                button.disabled = true;
+                button.innerHTML = spinner + 'Processing...';
+            } else {
+                button.disabled = false;
+                // Restore original text
+                if(button.id === 'login-email-btn') button.textContent = 'Sign In';
+                if(button.id === 'register-email-btn') button.textContent = 'Create Account';
+            }
+        }
+
+        loginGoogleBtn.addEventListener('click', () => signInWithPopup(auth, provider).then(handleNewUser).catch(handleAuthError));
         logoutBtn.addEventListener('click', () => signOut(auth));
         
         registerEmailBtn.addEventListener('click', () => {
@@ -264,24 +295,47 @@
             const email = document.getElementById('register-email').value;
             const password = document.getElementById('register-password').value;
             
-            if (!name) {
-                handleAuthError({ code: 'auth/missing-name' });
-                return;
-            }
-
+            if (!name) { handleAuthError({ code: 'auth/missing-name' }); return; }
+            setButtonLoading(registerEmailBtn, true);
+            
             createUserWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
-                    return updateProfile(userCredential.user, { displayName: name });
+                    return updateProfile(userCredential.user, { displayName: name })
+                        .then(() => {
+                            createUserProfile(userCredential.user); // Create firestore profile
+                        });
                 })
-                .catch(handleAuthError);
+                .catch(handleAuthError)
+                .finally(() => setButtonLoading(registerEmailBtn, false));
         });
 
         loginEmailBtn.addEventListener('click', () => {
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
-            signInWithEmailAndPassword(auth, email, password).catch(handleAuthError);
+            setButtonLoading(loginEmailBtn, true);
+            signInWithEmailAndPassword(auth, email, password)
+                .catch(handleAuthError)
+                .finally(() => setButtonLoading(loginEmailBtn, false));
         });
 
+        async function createUserProfile(user) {
+            const userRef = doc(db, "users", user.uid);
+            const userDoc = await getDoc(userRef);
+            if (!userDoc.exists()) {
+                await setDoc(userRef, {
+                    name: user.displayName, email: user.email,
+                    createdAt: serverTimestamp(), accountTier: "free"
+                });
+            }
+        }
+
+        function handleNewUser(result) {
+            const isNewUser = getAdditionalUserInfo(result).isNewUser;
+            if (isNewUser) {
+                createUserProfile(result.user);
+            }
+        }
+        
         function handleAuthError(error) {
             let message = "An unknown error occurred.";
             switch (error.code) {
@@ -291,7 +345,7 @@
                 case 'auth/email-already-in-use': message = "An account with this email already exists."; break;
                 case 'auth/weak-password': message = "Password should be at least 6 characters long."; break;
                 case 'auth/missing-name': message = "Please enter your name."; break;
-                default: message = error.message; break;
+                default: message = "An unexpected error occurred. Please try again."; break;
             }
             authError.textContent = message;
             authError.classList.remove('hidden');
@@ -326,10 +380,8 @@
             }
             
             joinError.classList.add('hidden');
-
             const presentationsRef = collection(db, "presentations");
             const q = query(presentationsRef, where("sessionCode", "==", code), limit(1));
-
             try {
                 const querySnapshot = await getDocs(q);
                 if (querySnapshot.empty) {
@@ -339,8 +391,7 @@
                     const doc = querySnapshot.docs[0];
                     const id = doc.id;
                     const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '');
-                    const url = `${baseUrl}${type}.html?id=${id}`;
-                    window.location.href = url;
+                    window.location.href = `${baseUrl}${type}.html?id=${id}`;
                 }
             } catch (error) {
                 console.error("Error finding session:", error);
@@ -349,12 +400,25 @@
             }
         }
 
-        function uploadFile(file) {
-             const user = auth.currentUser;
-            if (!user) {
-                alert("You must be logged in to upload a file.");
+        async function getUserTier(userId) {
+            const userRef = doc(db, "users", userId);
+            const userDoc = await getDoc(userRef);
+            return userDoc.exists() ? userDoc.data().accountTier || "free" : "free";
+        }
+
+        async function uploadFile(file) {
+            const user = auth.currentUser;
+            if (!user) { alert("You must be logged in to upload a file."); return; }
+
+            const userTier = await getUserTier(user.uid);
+            const sizeLimitMB = userTier === "premium" ? 100 : 10;
+            const sizeLimitBytes = sizeLimitMB * 1024 * 1024;
+
+            if (file.size > sizeLimitBytes) {
+                alert(`File is too large. Your limit is ${sizeLimitMB}MB. Please upgrade for larger files.`);
                 return;
             }
+
             const filePath = `uploads/${user.uid}/${Date.now()}-${file.name}`;
             const storageRef = ref(storage, filePath);
             const uploadTask = uploadBytesResumable(storageRef, file);
@@ -375,46 +439,39 @@
                 }, 
                 () => {
                     getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                        createPresentationSession(downloadURL, file.name);
+                        createPresentationSession(downloadURL, file.name, userTier);
                     });
                 }
             );
         }
 
-        async function createPresentationSession(fileUrl, fileName) {
+        async function createPresentationSession(fileUrl, fileName, userTier) {
             const user = auth.currentUser;
             if (!user) return;
-
             const sessionCode = Math.floor(10000000 + Math.random() * 90000000).toString();
+            const expiryHours = userTier === "premium" ? 48 : 4;
+            const expiresAt = new Date(Date.now() + expiryHours * 60 * 60 * 1000);
 
             try {
                 const sessionData = {
-                    userId: user.uid,
-                    fileUrl: fileUrl,
-                    currentPage: 1,
-                    createdAt: serverTimestamp(),
-                    expiresAt: new Date(Date.now() + 4 * 60 * 60 * 1000),
-                    sessionCode: sessionCode 
+                    userId: user.uid, fileUrl, currentPage: 1,
+                    createdAt: serverTimestamp(), expiresAt, sessionCode 
                 };
                 const docRef = await addDoc(collection(db, "presentations"), sessionData);
 
                 const historyData = {
-                    userId: user.uid,
-                    fileName: fileName,
-                    uploadedAt: serverTimestamp(),
-                    presentationId: docRef.id,
-                    sessionCode: sessionCode
+                    userId: user.uid, fileName, sessionCode,
+                    uploadedAt: serverTimestamp(), presentationId: docRef.id
                 };
                 await addDoc(collection(db, "history"), historyData);
-
-                displayLinks(docRef.id, sessionCode);
+                displayLinks(docRef.id, sessionCode, expiryHours);
             } catch (e) {
                 console.error("Error adding document: ", e);
                 alert("Failed to create session. Please try again.");
             }
         }
         
-        function displayLinks(id, sessionCode) {
+        function displayLinks(id, sessionCode, expiryHours) {
             const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '');
             const presenterLinkInput = document.getElementById('presenter-link');
             const remoteLinkInput = document.getElementById('remote-link');
@@ -422,6 +479,7 @@
             const showQrBtn = document.getElementById('show-qr-btn');
             const qrCodeSection = document.getElementById('qr-code-section');
             const copySuccess = document.getElementById('copy-success');
+            const expiryMessage = document.querySelector('#links-section p:last-child');
 
             const presenterUrl = `${baseUrl}presenter.html?id=${id}`;
             const remoteUrl = `${baseUrl}remote.html?id=${id}`;
@@ -429,6 +487,7 @@
             presenterLinkInput.value = presenterUrl;
             remoteLinkInput.value = remoteUrl;
             sessionCodeDisplay.textContent = sessionCode;
+            expiryMessage.textContent = `This session will expire in ${expiryHours} hours.`;
             
             uploadProgressSection.classList.add('hidden');
             linksSection.classList.remove('hidden');
@@ -438,21 +497,16 @@
                 navigator.clipboard.writeText(textToCopy).then(() => {
                     copySuccess.classList.remove('hidden');
                     setTimeout(() => copySuccess.classList.add('hidden'), 2000);
-                }).catch(err => {
-                    console.error('Failed to copy: ', err);
                 });
             });
 
             showQrBtn.addEventListener('click', () => {
                 const qrPresenterDiv = document.getElementById('qr-presenter');
                 const qrRemoteDiv = document.getElementById('qr-remote');
-                
                 qrPresenterDiv.innerHTML = '';
                 qrRemoteDiv.innerHTML = '';
-
                 new QRCode(qrPresenterDiv, { text: presenterUrl, width: 128, height: 128 });
                 new QRCode(qrRemoteDiv, { text: remoteUrl, width: 128, height: 128 });
-
                 qrCodeSection.classList.remove('hidden');
             });
         }
