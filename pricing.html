@@ -6,6 +6,7 @@
     <title>Pricing - SlideChangerOnline</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- NEW: Razorpay Checkout Script -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
         body { 
@@ -86,8 +87,6 @@
         const auth = getAuth(app);
 
         const subscribeBtn = document.getElementById('subscribe-btn');
-
-        // UPDATED: This is the new base URL for your single "api" function.
         const apiBaseUrl = "https://us-central1-slidechangeronline.cloudfunctions.net/api";
 
         onAuthStateChanged(auth, (user) => {
@@ -111,23 +110,16 @@
             subscribeBtn.innerHTML = `<svg class="animate-spin mx-auto h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processing...`;
             
             try {
-                // Get the user's auth token
                 const token = await user.getIdToken();
 
-                // 1. Call the new API endpoint to create an order
                 const createOrderResponse = await fetch(`${apiBaseUrl}/createRazorpayOrder`, {
                     method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
                 if (!createOrderResponse.ok) throw new Error('Failed to create order.');
-
                 const { data: { orderId } } = await createOrderResponse.json();
                 
-                // 2. Open Razorpay Checkout
                 const options = {
                     key: "rzp_live_ROgTLJRTGurfqx",
                     amount: "2900",
@@ -136,8 +128,7 @@
                     description: "Premium Subscription",
                     order_id: orderId,
                     handler: async function (response) {
-                        // 3. Call the new API endpoint to verify payment
-                        await fetch(`${apiBaseUrl}/verifyRazorpayPayment`, {
+                        const verifyResponse = await fetch(`${apiBaseUrl}/verifyRazorpayPayment`, {
                             method: 'POST',
                             headers: {
                                 'Authorization': `Bearer ${token}`,
@@ -145,6 +136,8 @@
                             },
                             body: JSON.stringify({ data: response })
                         });
+
+                        if (!verifyResponse.ok) throw new Error('Payment verification failed.');
                         
                         alert("Payment Successful! Your account has been upgraded to Premium.");
                         window.location.href = './dashboard.html';
