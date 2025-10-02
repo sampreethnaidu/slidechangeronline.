@@ -6,6 +6,8 @@
     <title>Pricing - SlideChangerOnline</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- NEW: Razorpay Checkout Script -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
         body { 
             font-family: 'Inter', sans-serif;
@@ -68,9 +70,102 @@
         </footer>
     </div>
     
-    <script>
-        document.getElementById('subscribe-btn').addEventListener('click', () => {
-            alert('Payment processing with Stripe is coming soon!');
+    <!-- NEW: Firebase and Checkout Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCtlgsNhCEsKLHA-WmfoqQleW_n2kCQerI",
+            authDomain: "slidechangeronline.firebaseapp.com",
+            projectId: "slidechangeronline",
+            storageBucket: "slidechangeronline.firebasestorage.app",
+            messagingSenderId: "1013262596418",
+            appId: "1:1013262596418:web:b7c9ee7e6da7545ff370db"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const functions = getFunctions(app, 'us-central1'); // Ensure region matches your functions
+
+        const subscribeBtn = document.getElementById('subscribe-btn');
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // User is logged in, enable the button
+                subscribeBtn.disabled = false;
+                subscribeBtn.textContent = 'Subscribe Now';
+            } else {
+                // User is not logged in, disable and prompt
+                subscribeBtn.disabled = true;
+                subscribeBtn.textContent = 'Please Sign In to Subscribe';
+            }
+        });
+
+        subscribeBtn.addEventListener('click', async () => {
+            const user = auth.currentUser;
+            if (!user) {
+                alert("You must be signed in to subscribe. Please go back to the homepage and sign in.");
+                return;
+            }
+
+            // Show loading state
+            subscribeBtn.disabled = true;
+            subscribeBtn.innerHTML = `<svg class="animate-spin mx-auto h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processing...`;
+            
+            try {
+                // 1. Call the Cloud Function to create an order
+                const createOrderFunction = httpsCallable(functions, 'createRazorpayOrder');
+                const result = await createOrderFunction();
+                const { orderId } = result.data;
+                
+                // 2. Open Razorpay Checkout
+                const options = {
+                    key: "rzp_live_ROgTLJRTGurfqx", // IMPORTANT: Replace with your Razorpay Key ID
+                    amount: "2900", // Amount in paise
+                    currency: "INR",
+                    name: "SlideChangerOnline",
+                    description: "Premium Subscription",
+                    order_id: orderId,
+                    handler: async function (response) {
+                        // 3. This function runs after successful payment
+                        const verifyPaymentFunction = httpsCallable(functions, 'verifyRazorpayPayment');
+                        await verifyPaymentFunction({
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_signature: response.razorpay_signature
+                        });
+                        
+                        alert("Payment Successful! Your account has been upgraded to Premium.");
+                        window.location.href = './dashboard.html'; // Redirect to dashboard
+                    },
+                    prefill: {
+                        name: user.displayName || "",
+                        email: user.email || ""
+                    },
+                    theme: {
+                        color: "#F59E0B" // Amber color to match your theme
+                    }
+                };
+                
+                const rzp = new Razorpay(options);
+                rzp.open();
+                
+                // Reset button on checkout close
+                rzp.on('payment.failed', function (response){
+                    alert("Payment failed. Please try again.");
+                    console.error(response);
+                    subscribeBtn.disabled = false;
+                    subscribeBtn.textContent = 'Subscribe Now';
+                });
+
+            } catch (error) {
+                console.error("Error during subscription process:", error);
+                alert("An error occurred. Please try again later.");
+                subscribeBtn.disabled = false;
+                subscribeBtn.textContent = 'Subscribe Now';
+            }
         });
     </script>
 </body>
