@@ -31,8 +31,8 @@ const checkAuth = async (req, res, next) => {
 
 app.post("/createRazorpayOrder", checkAuth, async (req, res) => {
     const instance = new Razorpay({
-        key_id: "rzp_live_ROgTLJRTGurfqx",
-        key_secret: "wcNsU5F5ly98RpTAtXgXnl1h",
+        key_id: "rzp_test_RP6CroavUW8IKy",
+        key_secret: "qXFXVSUhdyMkdPyisOVtG8oB",
     });
 
     const options = {
