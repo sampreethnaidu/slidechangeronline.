@@ -6,7 +6,6 @@
     <title>Pricing - SlideChangerOnline</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- NEW: Razorpay Checkout Script -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
         body { 
@@ -127,19 +126,11 @@
                     name: "SlideChangerOnline",
                     description: "Premium Subscription",
                     order_id: orderId,
-                    handler: async function (response) {
-                        const verifyResponse = await fetch(`${apiBaseUrl}/verifyRazorpayPayment`, {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({ data: response })
-                        });
-
-                        if (!verifyResponse.ok) throw new Error('Payment verification failed.');
-                        
-                        alert("Payment Successful! Your account has been upgraded to Premium.");
+                    // UPDATED: The handler function is now simplified
+                    handler: function (response) {
+                        // The webhook will handle the account upgrade.
+                        // We just need to show a success message and redirect.
+                        alert("Payment Successful! Your account will be upgraded shortly. Please check your dashboard.");
                         window.location.href = './dashboard.html';
                     },
                     prefill: { name: user.displayName || "", email: user.email || "" },
