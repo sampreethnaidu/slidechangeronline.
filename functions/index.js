@@ -10,6 +10,7 @@ const crypto = require("crypto");
 
 admin.initializeApp();
 
+// --- Main API App for creating orders ---
 const app = express();
 app.use(cors({ origin: ["https://www.slidechangeronline.me", "https://slidechangeronline.me"] }));
 
@@ -34,11 +35,14 @@ app.post("/createRazorpayOrder", checkAuth, async (req, res) => {
         key_secret: "wcNsU5F5ly98RpTAtXgXnl1h",
     });
 
-    // *** THIS IS THE FIX: The receipt ID is now much shorter. ***
     const options = {
-        amount: 2900, // 29 INR in paise
+        amount: 2900,
         currency: "INR",
-        receipt: `receipt_${req.user.uid}`, // Shortened to be under 40 characters
+        receipt: `receipt_${req.user.uid}`,
+        // UPDATED: We now add the user's ID to the notes for the webhook to find.
+        notes: {
+            firebase_user_id: req.user.uid
+        }
     };
 
     try {
@@ -51,31 +55,50 @@ app.post("/createRazorpayOrder", checkAuth, async (req, res) => {
     }
 });
 
-app.post("/verifyRazorpayPayment", checkAuth, async (req, res) => {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body.data;
-    const userId = req.user.uid;
-    const key_secret = "wcNsU5F5ly98RpTAtXgXnl1h";
-
-    const body = razorpay_order_id + "|" + razorpay_payment_id;
-    const expectedSignature = crypto.createHmac("sha256", key_secret).update(body.toString()).digest("hex");
-
-    if (expectedSignature === razorpay_signature) {
-        logger.info(`Payment verified for user: ${userId}`);
-        const db = admin.firestore();
-        const userRef = db.collection("users").doc(userId);
-        await userRef.update({ accountTier: "premium" });
-        
-        logger.info(`User ${userId} successfully upgraded to premium.`);
-        res.status(200).send({ data: { status: "success" } });
-    } else {
-        logger.error(`Payment verification failed for user: ${userId}`);
-        res.status(400).send({ error: "Payment verification failed." });
-    }
-});
+// The /verifyRazorpayPayment route has been removed as it's no longer needed.
 
 exports.api = onRequest({ region: "us-central1" }, app);
 
+
+// --- NEW, SEPARATE Webhook Function for payment confirmation ---
+exports.razorpayWebhook = onRequest(async (req, res) => {
+    const secret = "S@mpreethl4E143143"; // IMPORTANT: You will create this in the Razorpay Dashboard.
+
+    const shasum = crypto.createHmac('sha256', secret);
+    shasum.update(JSON.stringify(req.body));
+    const digest = shasum.digest('hex');
+
+    if (digest === req.headers['x-razorpay-signature']) {
+        logger.info('Payment signature verified.');
+        
+        // Check for the "payment.captured" event
+        if (req.body.event === 'payment.captured') {
+            const payment = req.body.payload.payment.entity;
+            const order = req.body.payload.order.entity;
+            const userId = order.notes.firebase_user_id;
+
+            if (userId) {
+                logger.info(`Payment successful for user: ${userId}`);
+                const db = admin.firestore();
+                const userRef = db.collection("users").doc(userId);
+                
+                await userRef.update({ accountTier: "premium" });
+                logger.info(`User ${userId} successfully upgraded to premium.`);
+            } else {
+                logger.error("Webhook received but no firebase_user_id found in order notes.");
+            }
+        }
+        res.status(200).send('Webhook processed.');
+    } else {
+        logger.error('Webhook signature verification failed.');
+        res.status(400).send('Invalid signature.');
+    }
+});
+
+
+// --- Cleanup Function (Remains the same) ---
 exports.cleanupExpiredPresentations = onSchedule("every 60 minutes", async (event) => {
+    // ... This function's code is unchanged ...
     logger.info("Starting cleanup of expired presentations.");
     const now = new Date();
     const db = admin.firestore();
