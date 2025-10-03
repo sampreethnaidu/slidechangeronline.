@@ -35,11 +35,11 @@ app.post("/createRazorpayOrder", checkAuth, async (req, res) => {
         key_secret: "qXFXVSUhdyMkdPyisOVtG8oB",
     });
 
+    // UPDATED: Receipt ID is now shorter and we add notes.
     const options = {
         amount: 2900,
         currency: "INR",
         receipt: `receipt_${req.user.uid}`,
-        // UPDATED: We now add the user's ID to the notes for the webhook to find.
         notes: {
             firebase_user_id: req.user.uid
         }
@@ -55,14 +55,14 @@ app.post("/createRazorpayOrder", checkAuth, async (req, res) => {
     }
 });
 
-// The /verifyRazorpayPayment route has been removed as it's no longer needed.
-
+// The old /verifyRazorpayPayment route has been removed.
 exports.api = onRequest({ region: "us-central1" }, app);
 
 
 // --- NEW, SEPARATE Webhook Function for payment confirmation ---
 exports.razorpayWebhook = onRequest(async (req, res) => {
-    const secret = "S@mpreethl4E143143"; // IMPORTANT: You will create this in the Razorpay Dashboard.
+    // IMPORTANT: You will create this secret in the Razorpay Dashboard.
+    const secret = "S@mpreethl4E143143"; 
 
     const shasum = crypto.createHmac('sha256', secret);
     shasum.update(JSON.stringify(req.body));
@@ -71,9 +71,7 @@ exports.razorpayWebhook = onRequest(async (req, res) => {
     if (digest === req.headers['x-razorpay-signature']) {
         logger.info('Payment signature verified.');
         
-        // Check for the "payment.captured" event
         if (req.body.event === 'payment.captured') {
-            const payment = req.body.payload.payment.entity;
             const order = req.body.payload.order.entity;
             const userId = order.notes.firebase_user_id;
 
@@ -98,7 +96,6 @@ exports.razorpayWebhook = onRequest(async (req, res) => {
 
 // --- Cleanup Function (Remains the same) ---
 exports.cleanupExpiredPresentations = onSchedule("every 60 minutes", async (event) => {
-    // ... This function's code is unchanged ...
     logger.info("Starting cleanup of expired presentations.");
     const now = new Date();
     const db = admin.firestore();
