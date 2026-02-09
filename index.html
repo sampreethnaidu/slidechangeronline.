@@ -432,7 +432,7 @@
             if (!user) { alert("You must be logged in to upload a file."); return; }
 
             const userTier = await getUserTier(user.uid);
-            const sizeLimitMB = userTier === "premium" ? 100 : 20;
+            const sizeLimitMB = userTier === "premium" ? 100 : 40;
             const sizeLimitBytes = sizeLimitMB * 1024 * 1024;
 
             if (file.size > sizeLimitBytes) {
@@ -534,6 +534,7 @@
     </script>
 </body>
 </html>
+
 
 
 
