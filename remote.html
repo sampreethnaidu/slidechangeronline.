@@ -2,41 +2,138 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Remote - SlideChangerOnline</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #000; overflow: hidden; margin: 0; padding: 0; width: 100vw; height: 100vh; }
-        #remote-wrapper { display: flex; flex-direction: column; height: 100vh; }
-        #slide-view { position: relative; flex-grow: 1; background: #111; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        #pdf-canvas { display: block; max-width: 100%; max-height: 100%; }
-        /* touch-action remains here for drawing surface only */
-        #touch-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; touch-action: none; }
-        #local-ink-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
-        #toolbar { height: 170px; background: #1f2937; border-top: 1px solid #374151; padding: 12px; display: flex; flex-direction: column; gap: 10px; z-index: 20; }
-        .tool-btn { padding: 10px; background: #374151; border-radius: 8px; color: #d1d5db; border: 2px solid transparent; font-weight: 600; text-align: center; font-size: 0.85rem; }
-        .tool-btn.active { border-color: #f59e0b; background: #4b5563; color: white; }
-        #loading-overlay { position: fixed; inset: 0; background: #111827; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; transition: opacity 0.5s ease; }
-        #status-log { color: #9ca3af; font-size: 0.7rem; margin-top: 1rem; font-family: monospace; text-align: center; max-width: 80%; }
+        :root {
+            --app-height: 100dvh;
+        }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #000; 
+            overflow: hidden; 
+            margin: 0; 
+            padding: 0; 
+            width: 100vw;
+            height: var(--app-height);
+            /* Removed global touch-action: none to allow button clicks */
+        }
+        #remote-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: var(--app-height);
+        }
+        #slide-view {
+            position: relative;
+            flex-grow: 1;
+            background: #111;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            min-height: 0; 
+        }
+        #pdf-canvas {
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        /* Lock touch-action ONLY to the drawing/laser layer */
+        #touch-layer {
+            position: absolute;
+            z-index: 10;
+            touch-action: none;
+            cursor: crosshair;
+        }
+        #local-ink-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            pointer-events: none;
+        }
+        #toolbar {
+            height: auto;
+            min-height: 160px;
+            background: #1f2937;
+            border-top: 1px solid #374151;
+            padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 20;
+            flex-shrink: 0;
+        }
+        .tool-btn {
+            padding: 10px;
+            background: #374151;
+            border-radius: 8px;
+            color: #d1d5db;
+            border: 2px solid transparent;
+            font-weight: 600;
+            text-align: center;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        .tool-btn.active {
+            border-color: #f59e0b;
+            background: #4b5563;
+            color: white;
+        }
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: #111827;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            transition: opacity 0.4s ease;
+            pointer-events: all; /* Initial state blocks input */
+        }
+        /* Class to allow clicking through the overlay during fadeout */
+        #loading-overlay.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+        #status-log {
+            color: #9ca3af;
+            font-size: 0.75rem;
+            margin-top: 1rem;
+            text-align: center;
+            max-width: 80%;
+            font-family: monospace;
+        }
         .error-text { color: #f87171 !important; }
+        .cors-hint { margin-top: 10px; padding: 10px; background: #311; border-radius: 5px; font-size: 0.7rem; color: #fca5a5; border: 1px solid #722; }
     </style>
 </head>
 <body>
 
     <div id="loading-overlay">
-        <div id="loader-icon" class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500 mb-4"></div>
-        <p class="text-white font-medium">Remote Synchronizing</p>
-        <div id="status-log">Initializing Firebase...</div>
-        <button id="retry-btn" class="hidden mt-4 bg-gray-700 px-4 py-2 rounded text-sm text-white">Retry Connection</button>
+        <div id="loader-spinner" class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500 mb-4"></div>
+        <p class="text-white font-bold">SlideChanger Remote</p>
+        <div id="status-log">Connecting to session...</div>
+        <div id="cors-fix" class="hidden cors-hint">
+            <strong>CORS ERROR DETECTED:</strong><br>
+            Your browser is blocking the PDF. Ensure you have run:<br>
+            <code>gsutil cors set cors.json gs://YOUR_BUCKET</code>
+        </div>
     </div>
 
     <div id="remote-wrapper">
         <div id="slide-view">
-            <canvas id="pdf-canvas"></canvas>
-            <canvas id="local-ink-canvas"></canvas>
-            <div id="touch-layer"></div>
+            <div id="touch-layer">
+                <canvas id="pdf-canvas"></canvas>
+                <canvas id="local-ink-canvas"></canvas>
+            </div>
         </div>
 
         <div id="toolbar">
@@ -48,13 +145,13 @@
             </div>
 
             <div class="grid grid-cols-3 gap-2 flex-grow">
-                <button id="prev-btn" class="bg-blue-600 rounded-lg font-bold text-xl active:scale-95 transition-transform">PREV</button>
-                <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg border border-gray-700">
-                    <span id="page-indicator" class="text-[10px] font-mono text-gray-400">SESSION: ACTIVE</span>
+                <button id="prev-btn" class="bg-blue-600 hover:bg-blue-700 rounded-lg font-bold text-xl active:scale-95 transition-transform">PREV</button>
+                <div class="flex flex-col items-center justify-center bg-gray-900 rounded-lg border border-gray-700">
+                    <span id="page-indicator" class="text-[10px] font-mono text-gray-400 uppercase tracking-tighter">Syncing...</span>
                     <span id="page-number" class="text-lg font-bold">1 / 1</span>
-                    <button id="refresh-btn" class="text-[10px] text-amber-500 hover:underline">FORCE RE-SYNC</button>
+                    <button id="refresh-btn" class="text-[10px] text-amber-500 hover:underline">RE-SYNC</button>
                 </div>
-                <button id="next-btn" class="bg-green-600 rounded-lg font-bold text-xl active:scale-95 transition-transform">NEXT</button>
+                <button id="next-btn" class="bg-green-600 hover:bg-green-700 rounded-lg font-bold text-xl active:scale-95 transition-transform">NEXT</button>
             </div>
         </div>
     </div>
@@ -80,7 +177,7 @@
 
         const overlay = document.getElementById('loading-overlay');
         const statusLog = document.getElementById('status-log');
-        const retryBtn = document.getElementById('retry-btn');
+        const corsFix = document.getElementById('cors-fix');
         const pdfCanvas = document.getElementById('pdf-canvas');
         const pdfCtx = pdfCanvas.getContext('2d');
         const inkCanvas = document.getElementById('local-ink-canvas');
@@ -109,34 +206,45 @@
             statusLog.textContent = msg;
             if (isError) {
                 statusLog.classList.add('error-text');
-                retryBtn.classList.remove('hidden');
-                document.getElementById('loader-icon').classList.add('hidden');
+                document.getElementById('loader-spinner').classList.add('hidden');
+                if (msg.toLowerCase().includes("cors") || msg.toLowerCase().includes("failed to fetch")) {
+                    corsFix.classList.remove('hidden');
+                }
             }
         }
 
         async function renderPage(num) {
             if (!pdfDoc || isRendering) return;
             isRendering = true;
+
             try {
                 const page = await pdfDoc.getPage(num);
                 const viewport = page.getViewport({ scale: 1 });
                 const wrapper = document.getElementById('slide-view');
-                const scale = Math.min(wrapper.clientWidth / viewport.width, wrapper.clientHeight / viewport.height);
-                const scaledViewport = page.getViewport({ scale });
+                
+                const wWidth = wrapper.clientWidth || window.innerWidth;
+                const wHeight = wrapper.clientHeight || (window.innerHeight - 160);
 
-                pdfCanvas.width = scaledViewport.width;
-                pdfCanvas.height = scaledViewport.height;
-                inkCanvas.width = scaledViewport.width;
-                inkCanvas.height = scaledViewport.height;
-                touchLayer.style.width = `${scaledViewport.width}px`;
-                touchLayer.style.height = `${scaledViewport.height}px`;
+                const scale = Math.min(wWidth / viewport.width, wHeight / viewport.height);
+                const scaledViewport = page.getViewport({ scale: scale || 1 });
+
+                const width = Math.floor(scaledViewport.width);
+                const height = Math.floor(scaledViewport.height);
+
+                pdfCanvas.width = width;
+                pdfCanvas.height = height;
+                inkCanvas.width = width;
+                inkCanvas.height = height;
+                
+                touchLayer.style.width = `${width}px`;
+                touchLayer.style.height = `${height}px`;
 
                 await page.render({ canvasContext: pdfCtx, viewport: scaledViewport }).promise;
                 currentPageNum = num;
                 clearInk();
                 attachInkListener(num);
-            } catch (e) {
-                updateStatus("Render Failed: " + e.message, true);
+            } catch (err) {
+                console.error("Render error:", err);
             } finally {
                 isRendering = false;
             }
@@ -168,14 +276,16 @@
             const rect = touchLayer.getBoundingClientRect();
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return { x: (clientX - rect.left) / rect.width, y: (clientY - rect.top) / rect.height };
+            let x = (clientX - rect.left) / rect.width;
+            let y = (clientY - rect.top) / rect.height;
+            return {
+                x: Math.max(0, Math.min(1, x)),
+                y: Math.max(0, Math.min(1, y))
+            };
         }
 
         const handleStart = (e) => {
-            // If in pointer mode, do NOT prevent default so buttons/scrolling work
             if (currentMode === 'pointer') return;
-            
-            // Prevent scrolling/tapping on the slide when using Laser or Pen
             e.preventDefault();
             isDrawing = true;
             const coords = getNormalizedCoords(e);
@@ -207,39 +317,53 @@
         };
 
         function updateLaser(coords, active) {
-            set(ref(rtdb, `sessions/${presentationId}/laser`), { x: coords.x, y: coords.y, active: active, timestamp: Date.now() });
+            set(ref(rtdb, `sessions/${presentationId}/laser`), {
+                x: coords.x,
+                y: coords.y,
+                active: active,
+                timestamp: Date.now()
+            });
         }
 
         if (presentationId) {
-            updateStatus("Fetching Session Data...");
+            updateStatus("Handshaking Firestore...");
             const docRef = doc(db, "presentations", presentationId);
             
+            const loadTimeout = setTimeout(() => {
+                if (!pdfDoc) updateStatus("Connection taking too long. Check Internet or CORS.", true);
+            }, 10000);
+
             onSnapshot(docRef, (snap) => {
                 if (snap.exists()) {
                     const data = snap.data();
-                    updateStatus("Loading PDF Content...");
+                    updateStatus("Fetching PDF from Storage...");
+                    
                     if (!pdfDoc && data.fileUrl) {
                         pdfjsLib.getDocument(data.fileUrl).promise.then(doc => {
+                            clearTimeout(loadTimeout);
                             pdfDoc = doc;
                             totalPages = doc.numPages;
-                            renderPage(data.currentPage || 1);
+                            document.getElementById('page-indicator').textContent = "CONNECTED";
                             
-                            // Hiding overlay with pointer-events fix
-                            overlay.style.opacity = '0';
-                            overlay.style.pointerEvents = 'none'; 
+                            // DISMISS OVERLAY: Use the new fade-out class to bypass pointer events
+                            overlay.classList.add('fade-out');
                             setTimeout(() => overlay.classList.add('hidden'), 500);
+                            
+                            renderPage(data.currentPage || 1);
                         }).catch(err => {
-                            updateStatus("PDF Access Denied (CORS or 404)", true);
+                            clearTimeout(loadTimeout);
+                            updateStatus("PDF LOAD FAILED: Check CORS settings.", true);
+                            console.error(err);
                         });
                     } else if (pdfDoc && data.currentPage !== currentPageNum) {
                         renderPage(data.currentPage);
                     }
                     pageNumDisplay.textContent = `${data.currentPage || 1} / ${totalPages}`;
                 } else {
-                    updateStatus("Session Expired or Deleted", true);
+                    updateStatus("Error: Session not found.", true);
                 }
             }, (err) => {
-                updateStatus("Firestore Connection Failed: " + err.code, true);
+                updateStatus("Firestore Error: " + err.code, true);
             });
 
             toolBtns.forEach(btn => {
@@ -257,10 +381,13 @@
             });
 
             document.getElementById('refresh-btn').addEventListener('click', () => location.reload());
-            retryBtn.addEventListener('click', () => location.reload());
 
-            prevBtn.addEventListener('click', () => { if (currentPageNum > 1) updateDoc(docRef, { currentPage: currentPageNum - 1 }); });
-            nextBtn.addEventListener('click', () => { if (currentPageNum < totalPages) updateDoc(docRef, { currentPage: currentPageNum + 1 }); });
+            prevBtn.addEventListener('click', () => {
+                if (currentPageNum > 1) updateDoc(docRef, { currentPage: currentPageNum - 1 });
+            });
+            nextBtn.addEventListener('click', () => {
+                if (currentPageNum < totalPages) updateDoc(docRef, { currentPage: currentPageNum + 1 });
+            });
 
             touchLayer.addEventListener('touchstart', handleStart, { passive: false });
             touchLayer.addEventListener('touchmove', handleMove, { passive: false });
@@ -269,7 +396,7 @@
             touchLayer.addEventListener('mousemove', handleMove);
             window.addEventListener('mouseup', handleEnd);
         } else {
-            updateStatus("Error: No Session ID Provided", true);
+            updateStatus("Error: Invalid URL (Missing ID).", true);
         }
     </script>
 </body>
