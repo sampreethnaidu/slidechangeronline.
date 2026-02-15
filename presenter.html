@@ -2,13 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Presenter - SlideChangerOnline</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #000; overflow: hidden; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #000; 
+            overflow: hidden; 
+            margin: 0; 
+            padding: 0; 
+            width: 100vw;
+            height: 100vh;
+        }
         #presenter-wrapper {
             position: relative;
             width: 100vw;
@@ -20,22 +28,30 @@
         }
         #canvas-container {
             position: relative;
-            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            background: #fff;
         }
-        #pdf-canvas { display: block; z-index: 1; }
+        #pdf-canvas { 
+            display: block; 
+            z-index: 1; 
+        }
         #annotation-canvas {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 2;
+            z-index: 5;
             pointer-events: none;
         }
         #laser-point {
             position: absolute;
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             background: radial-gradient(circle, rgba(255,0,0,1) 0%, rgba(255,0,0,0) 70%);
             border-radius: 50%;
             box-shadow: 0 0 15px 5px rgba(255, 0, 0, 0.8);
@@ -43,7 +59,7 @@
             pointer-events: none;
             display: none;
             transform: translate(-50%, -50%);
-            transition: transform 0.05s linear;
+            transition: left 0.08s linear, top 0.08s linear;
         }
         .ui-overlay {
             position: fixed;
@@ -91,7 +107,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-        import { getDatabase, ref, onValue, onChildAdded, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+        import { getDatabase, ref, onValue, onChildAdded, off } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCtlgsNhCEsKLHA-WmfoqQleW_n2kCQerI",
@@ -107,7 +123,7 @@
         const db = getFirestore(app);
         const rtdb = getDatabase(app);
 
-        // Constants
+        const container = document.getElementById('canvas-container');
         const pdfCanvas = document.getElementById('pdf-canvas');
         const pdfCtx = pdfCanvas.getContext('2d');
         const annCanvas = document.getElementById('annotation-canvas');
@@ -118,16 +134,14 @@
 
         pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
 
-        // State
         let pdfDoc = null;
         let currentPageNum = 1;
         let isRendering = false;
-        let drawingsListener = null;
+        let currentDrawingsRef = null;
 
         const params = new URLSearchParams(window.location.search);
         const presentationId = params.get('id');
 
-        // --- PDF Rendering ---
         async function renderPage(num) {
             if (!pdfDoc || isRendering) return;
             isRendering = true;
@@ -136,21 +150,25 @@
             try {
                 const page = await pdfDoc.getPage(num);
                 const viewport = page.getViewport({ scale: 1 });
-                const scale = Math.min(window.innerWidth / viewport.width, window.innerHeight / viewport.height) * 0.98;
+                const scale = Math.min(window.innerWidth / viewport.width, window.innerHeight / viewport.height) * 0.99;
                 const scaledViewport = page.getViewport({ scale });
 
-                pdfCanvas.width = scaledViewport.width;
-                pdfCanvas.height = scaledViewport.height;
-                annCanvas.width = scaledViewport.width;
-                annCanvas.height = scaledViewport.height;
+                const width = Math.floor(scaledViewport.width);
+                const height = Math.floor(scaledViewport.height);
+
+                pdfCanvas.width = width;
+                pdfCanvas.height = height;
+                annCanvas.width = width;
+                annCanvas.height = height;
+                
+                container.style.width = `${width}px`;
+                container.style.height = `${height}px`;
 
                 await page.render({ canvasContext: pdfCtx, viewport: scaledViewport }).promise;
                 currentPageNum = num;
                 statusMsg.textContent = `Page ${num} synced.`;
                 
-                // Clear and redraw annotations for new page
                 clearAnnotations();
-                fetchHistoricalAnnotations(num);
                 attachRealtimeInkListener(num);
             } catch (err) {
                 console.error("Render error:", err);
@@ -159,7 +177,6 @@
             }
         }
 
-        // --- Annotation Logic ---
         function clearAnnotations() {
             annCtx.clearRect(0, 0, annCanvas.width, annCanvas.height);
         }
@@ -181,36 +198,30 @@
             annCtx.stroke();
         }
 
-        async function fetchHistoricalAnnotations(num) {
-            const snapshot = await get(ref(rtdb, `sessions/${presentationId}/drawings/${num}`));
-            if (snapshot.exists()) {
-                const data = snapshot.val();
-                Object.values(data).forEach(drawStroke);
-            }
-        }
-
         function attachRealtimeInkListener(num) {
-            // Clean up old listener if exists
-            // RTDB onChildAdded will trigger for history too, so we use it for real-time live strokes
-            const drawingsRef = ref(rtdb, `sessions/${presentationId}/drawings/${num}`);
-            onChildAdded(drawingsRef, (snapshot) => {
+            // Detach previous page listener to prevent redundant calls and memory leaks
+            if (currentDrawingsRef) {
+                off(currentDrawingsRef);
+            }
+
+            currentDrawingsRef = ref(rtdb, `sessions/${presentationId}/drawings/${num}`);
+            
+            // onChildAdded handles both initial data (history) and real-time updates
+            onChildAdded(currentDrawingsRef, (snapshot) => {
                 const stroke = snapshot.val();
                 drawStroke(stroke);
             });
         }
 
-        // --- Fullscreen Logic ---
         fsBtn.addEventListener('click', () => {
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen();
-            } else {
-                if (document.exitFullscreen) document.exitFullscreen();
+            } else if (document.exitFullscreen) {
+                document.exitFullscreen();
             }
         });
 
-        // --- Main Listeners ---
         if (presentationId) {
-            // 1. Sync Page Number from Firestore
             onSnapshot(doc(db, "presentations", presentationId), (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
@@ -225,7 +236,6 @@
                 }
             });
 
-            // 2. Realtime Laser Pointer
             onValue(ref(rtdb, `sessions/${presentationId}/laser`), (snapshot) => {
                 const data = snapshot.val();
                 if (data && data.active) {
@@ -237,22 +247,21 @@
                 }
             });
 
-            // 3. Clear Signal
             onValue(ref(rtdb, `sessions/${presentationId}/clearSignal`), (snapshot) => {
-                const data = snapshot.val();
-                if (data) clearAnnotations();
+                if (snapshot.exists()) clearAnnotations();
             });
 
-            // 4. Soft Refresh Signal
             onValue(ref(rtdb, `sessions/${presentationId}/refreshSignal`), (snapshot) => {
                 if (snapshot.exists()) {
                     clearAnnotations();
-                    fetchHistoricalAnnotations(currentPageNum);
+                    attachRealtimeInkListener(currentPageNum);
                 }
             });
         }
 
-        window.addEventListener('resize', () => { if(pdfDoc) renderPage(currentPageNum); });
+        window.addEventListener('resize', () => { 
+            if(pdfDoc) renderPage(currentPageNum); 
+        });
     </script>
 </body>
 </html>
