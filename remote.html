@@ -4,105 +4,65 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Remote - SlideChangerOnline</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; touch-action: none; background-color: #111827; overflow: hidden; }
-        
-        #slide-view-container {
-            position: relative;
-            width: 100%;
-            height: calc(100vh - 180px); /* Adjusted for extra button */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: #111;
-        }
-
-        #pdf-canvas {
-            max-width: 100%;
-            max-height: 100%;
-            display: block;
-        }
-
-        #touch-pad {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 10;
-            touch-action: none; 
-        }
-
-        #toolbar {
-            height: 180px;
-            background: #1f2937;
-            border-top: 1px solid #374151;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            z-index: 20;
-        }
-
-        .tool-btn {
-            padding: 8px;
-            background: #374151;
-            border-radius: 8px;
-            color: #d1d5db;
-            border: 2px solid transparent;
-            font-weight: 600;
-            text-align: center;
-            font-size: 0.8rem;
-        }
-        .tool-btn.active {
-            border-color: #f59e0b;
-            background: #4b5563;
-            color: white;
-        }
+        body { font-family: 'Inter', sans-serif; background-color: #000; overflow: hidden; margin: 0; padding: 0; width: 100vw; height: 100vh; }
+        #remote-wrapper { display: flex; flex-direction: column; height: 100vh; }
+        #slide-view { position: relative; flex-grow: 1; background: #111; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+        #pdf-canvas { display: block; max-width: 100%; max-height: 100%; }
+        /* touch-action remains here for drawing surface only */
+        #touch-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; touch-action: none; }
+        #local-ink-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
+        #toolbar { height: 170px; background: #1f2937; border-top: 1px solid #374151; padding: 12px; display: flex; flex-direction: column; gap: 10px; z-index: 20; }
+        .tool-btn { padding: 10px; background: #374151; border-radius: 8px; color: #d1d5db; border: 2px solid transparent; font-weight: 600; text-align: center; font-size: 0.85rem; }
+        .tool-btn.active { border-color: #f59e0b; background: #4b5563; color: white; }
+        #loading-overlay { position: fixed; inset: 0; background: #111827; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; transition: opacity 0.5s ease; }
+        #status-log { color: #9ca3af; font-size: 0.7rem; margin-top: 1rem; font-family: monospace; text-align: center; max-width: 80%; }
+        .error-text { color: #f87171 !important; }
     </style>
 </head>
-<body class="flex flex-col h-screen text-white">
-    
-    <div id="loading-message" class="absolute inset-0 flex items-center justify-center bg-gray-900 z-50">
-        <p class="text-xl animate-pulse">Syncing Presentation...</p>
+<body>
+
+    <div id="loading-overlay">
+        <div id="loader-icon" class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500 mb-4"></div>
+        <p class="text-white font-medium">Remote Synchronizing</p>
+        <div id="status-log">Initializing Firebase...</div>
+        <button id="retry-btn" class="hidden mt-4 bg-gray-700 px-4 py-2 rounded text-sm text-white">Retry Connection</button>
     </div>
 
-    <!-- Main View -->
-    <div id="slide-view-container" class="hidden">
-        <canvas id="pdf-canvas"></canvas>
-        <div id="touch-pad"></div>
-    </div>
-
-    <!-- Toolbar -->
-    <div id="toolbar" class="hidden">
-        <div class="grid grid-cols-4 gap-2">
-            <button class="tool-btn active" id="tool-pointer" data-mode="pointer">👆 Move</button>
-            <button class="tool-btn" id="tool-laser" data-mode="laser">🔴 Laser</button>
-            <button class="tool-btn" id="tool-pen" data-mode="pen">✏️ Pen</button>
-            <button class="tool-btn bg-red-900/50 text-red-200" id="tool-clear">🗑️ Clear</button>
+    <div id="remote-wrapper">
+        <div id="slide-view">
+            <canvas id="pdf-canvas"></canvas>
+            <canvas id="local-ink-canvas"></canvas>
+            <div id="touch-layer"></div>
         </div>
 
-        <div class="grid grid-cols-3 gap-2 h-full">
-            <button id="prev-btn" class="bg-blue-600 rounded-lg font-bold text-xl active:scale-95">Prev</button>
-            
-            <!-- NEW: Refresh Button -->
-            <button id="refresh-btn" class="bg-purple-600 rounded-lg font-bold text-sm active:scale-95 flex flex-col items-center justify-center">
-                <span>🔄 Sync</span>
-                <span class="text-xs font-normal">Screen</span>
-            </button>
-            
-            <button id="next-btn" class="bg-green-600 rounded-lg font-bold text-xl active:scale-95">Next</button>
+        <div id="toolbar">
+            <div class="grid grid-cols-4 gap-2">
+                <button class="tool-btn active" id="tool-pointer" data-mode="pointer">👆 Move</button>
+                <button class="tool-btn" id="tool-laser" data-mode="laser">🔴 Laser</button>
+                <button class="tool-btn" id="tool-pen" data-mode="pen">✏️ Pen</button>
+                <button class="tool-btn bg-red-900/50 text-red-200 border-red-800" id="tool-clear">🗑️ Clear</button>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 flex-grow">
+                <button id="prev-btn" class="bg-blue-600 rounded-lg font-bold text-xl active:scale-95 transition-transform">PREV</button>
+                <div class="flex flex-col items-center justify-center bg-gray-800 rounded-lg border border-gray-700">
+                    <span id="page-indicator" class="text-[10px] font-mono text-gray-400">SESSION: ACTIVE</span>
+                    <span id="page-number" class="text-lg font-bold">1 / 1</span>
+                    <button id="refresh-btn" class="text-[10px] text-amber-500 hover:underline">FORCE RE-SYNC</button>
+                </div>
+                <button id="next-btn" class="bg-green-600 rounded-lg font-bold text-xl active:scale-95 transition-transform">NEXT</button>
+            </div>
         </div>
-        <div class="text-center text-xs text-gray-500" id="page-indicator">Page: -- / --</div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-        import { getDatabase, ref, set, push, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+        import { getDatabase, ref, set, push, onChildAdded, off, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCtlgsNhCEsKLHA-WmfoqQleW_n2kCQerI",
@@ -118,166 +78,198 @@
         const db = getFirestore(app);
         const rtdb = getDatabase(app);
 
-        // ... (Existing UI Elements) ...
-        const loadingMsg = document.getElementById('loading-message');
-        const slideContainer = document.getElementById('slide-view-container');
-        const toolbar = document.getElementById('toolbar');
-        const touchPad = document.getElementById('touch-pad');
+        const overlay = document.getElementById('loading-overlay');
+        const statusLog = document.getElementById('status-log');
+        const retryBtn = document.getElementById('retry-btn');
         const pdfCanvas = document.getElementById('pdf-canvas');
         const pdfCtx = pdfCanvas.getContext('2d');
+        const inkCanvas = document.getElementById('local-ink-canvas');
+        const inkCtx = inkCanvas.getContext('2d');
+        const touchLayer = document.getElementById('touch-layer');
         const toolBtns = document.querySelectorAll('.tool-btn');
-        const pageIndicator = document.getElementById('page-indicator');
+        const pageNumDisplay = document.getElementById('page-number');
         const prevBtn = document.getElementById('prev-btn');
         const nextBtn = document.getElementById('next-btn');
-        const refreshBtn = document.getElementById('refresh-btn'); // NEW
-
-        let pdfDoc = null;
-        let currentPage = 1;
-        let totalPages = 0;
-        let currentMode = 'pointer'; 
-        let isDrawing = false;
-        let currentPath = [];
-        let isRendering = false;
 
         pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
+
+        let pdfDoc = null;
+        let currentPageNum = 1;
+        let totalPages = 1;
+        let isRendering = false;
+        let currentMode = 'pointer';
+        let isDrawing = false;
+        let currentPath = [];
+        let currentDrawingsRef = null;
 
         const params = new URLSearchParams(window.location.search);
         const presentationId = params.get('id');
 
-        // ... (Existing Render Logic) ...
-        function renderPage(num) {
+        function updateStatus(msg, isError = false) {
+            statusLog.textContent = msg;
+            if (isError) {
+                statusLog.classList.add('error-text');
+                retryBtn.classList.remove('hidden');
+                document.getElementById('loader-icon').classList.add('hidden');
+            }
+        }
+
+        async function renderPage(num) {
             if (!pdfDoc || isRendering) return;
             isRendering = true;
-
-            pdfDoc.getPage(num).then(function(page) {
+            try {
+                const page = await pdfDoc.getPage(num);
                 const viewport = page.getViewport({ scale: 1 });
-                const containerWidth = slideContainer.clientWidth;
-                const containerHeight = slideContainer.clientHeight;
-                const scaleX = containerWidth / viewport.width;
-                const scaleY = containerHeight / viewport.height;
-                const scale = Math.min(scaleX, scaleY);
-                const scaledViewport = page.getViewport({ scale: scale });
+                const wrapper = document.getElementById('slide-view');
+                const scale = Math.min(wrapper.clientWidth / viewport.width, wrapper.clientHeight / viewport.height);
+                const scaledViewport = page.getViewport({ scale });
 
                 pdfCanvas.width = scaledViewport.width;
                 pdfCanvas.height = scaledViewport.height;
-                touchPad.style.width = `${scaledViewport.width}px`;
-                touchPad.style.height = `${scaledViewport.height}px`;
+                inkCanvas.width = scaledViewport.width;
+                inkCanvas.height = scaledViewport.height;
+                touchLayer.style.width = `${scaledViewport.width}px`;
+                touchLayer.style.height = `${scaledViewport.height}px`;
 
-                const renderContext = { canvasContext: pdfCtx, viewport: scaledViewport };
-                page.render(renderContext).promise.then(() => { isRendering = false; });
-            });
+                await page.render({ canvasContext: pdfCtx, viewport: scaledViewport }).promise;
+                currentPageNum = num;
+                clearInk();
+                attachInkListener(num);
+            } catch (e) {
+                updateStatus("Render Failed: " + e.message, true);
+            } finally {
+                isRendering = false;
+            }
         }
 
-        // --- Drawing Logic ---
-        function getCoords(e) {
-            const rect = touchPad.getBoundingClientRect();
+        function clearInk() { inkCtx.clearRect(0, 0, inkCanvas.width, inkCanvas.height); }
+
+        function drawStroke(stroke) {
+            if (!stroke || !stroke.points || stroke.points.length < 2) return;
+            inkCtx.beginPath();
+            inkCtx.strokeStyle = stroke.color || "red";
+            inkCtx.lineWidth = stroke.width || 4;
+            inkCtx.lineCap = "round";
+            inkCtx.lineJoin = "round";
+            const w = inkCanvas.width;
+            const h = inkCanvas.height;
+            inkCtx.moveTo(stroke.points[0].x * w, stroke.points[0].y * h);
+            stroke.points.forEach(p => inkCtx.lineTo(p.x * w, p.y * h));
+            inkCtx.stroke();
+        }
+
+        function attachInkListener(num) {
+            if (currentDrawingsRef) off(currentDrawingsRef);
+            currentDrawingsRef = ref(rtdb, `sessions/${presentationId}/drawings/${num}`);
+            onChildAdded(currentDrawingsRef, (snap) => drawStroke(snap.val()));
+        }
+
+        function getNormalizedCoords(e) {
+            const rect = touchLayer.getBoundingClientRect();
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return {
-                x: (clientX - rect.left) / rect.width,
-                y: (clientY - rect.top) / rect.height
-            };
+            return { x: (clientX - rect.left) / rect.width, y: (clientY - rect.top) / rect.height };
         }
 
-        // --- Init ---
+        const handleStart = (e) => {
+            // If in pointer mode, do NOT prevent default so buttons/scrolling work
+            if (currentMode === 'pointer') return;
+            
+            // Prevent scrolling/tapping on the slide when using Laser or Pen
+            e.preventDefault();
+            isDrawing = true;
+            const coords = getNormalizedCoords(e);
+            if (currentMode === 'laser') updateLaser(coords, true);
+            else if (currentMode === 'pen') currentPath = [coords];
+        };
+
+        const handleMove = (e) => {
+            if (!isDrawing) return;
+            const coords = getNormalizedCoords(e);
+            if (currentMode === 'laser') updateLaser(coords, true);
+            else if (currentMode === 'pen') {
+                const lastPoint = currentPath[currentPath.length - 1];
+                drawStroke({ points: [lastPoint, coords], color: "red", width: 4 });
+                currentPath.push(coords);
+            }
+        };
+
+        const handleEnd = () => {
+            if (!isDrawing) return;
+            isDrawing = false;
+            if (currentMode === 'laser') updateLaser({ x: 0, y: 0 }, false);
+            else if (currentMode === 'pen' && currentPath.length > 1) {
+                push(ref(rtdb, `sessions/${presentationId}/drawings/${currentPageNum}`), {
+                    points: currentPath, color: "red", width: 4, timestamp: Date.now()
+                });
+            }
+            currentPath = [];
+        };
+
+        function updateLaser(coords, active) {
+            set(ref(rtdb, `sessions/${presentationId}/laser`), { x: coords.x, y: coords.y, active: active, timestamp: Date.now() });
+        }
+
         if (presentationId) {
+            updateStatus("Fetching Session Data...");
             const docRef = doc(db, "presentations", presentationId);
             
-            onSnapshot(docRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
+            onSnapshot(docRef, (snap) => {
+                if (snap.exists()) {
+                    const data = snap.data();
+                    updateStatus("Loading PDF Content...");
                     if (!pdfDoc && data.fileUrl) {
-                        pdfjsLib.getDocument(data.fileUrl).promise.then((pDoc) => {
-                            pdfDoc = pDoc;
-                            loadingMsg.classList.add('hidden');
-                            slideContainer.classList.remove('hidden');
-                            toolbar.classList.remove('hidden');
-                            currentPage = data.currentPage || 1;
-                            totalPages = pdfDoc.numPages; 
-                            renderPage(currentPage);
-                            pageIndicator.textContent = `Page: ${currentPage} / ${totalPages}`;
+                        pdfjsLib.getDocument(data.fileUrl).promise.then(doc => {
+                            pdfDoc = doc;
+                            totalPages = doc.numPages;
+                            renderPage(data.currentPage || 1);
+                            
+                            // Hiding overlay with pointer-events fix
+                            overlay.style.opacity = '0';
+                            overlay.style.pointerEvents = 'none'; 
+                            setTimeout(() => overlay.classList.add('hidden'), 500);
+                        }).catch(err => {
+                            updateStatus("PDF Access Denied (CORS or 404)", true);
                         });
-                    } else if (pdfDoc && data.currentPage !== currentPage) {
-                        currentPage = data.currentPage;
-                        renderPage(currentPage);
-                        pageIndicator.textContent = `Page: ${currentPage} / ${totalPages}`;
+                    } else if (pdfDoc && data.currentPage !== currentPageNum) {
+                        renderPage(data.currentPage);
                     }
+                    pageNumDisplay.textContent = `${data.currentPage || 1} / ${totalPages}`;
+                } else {
+                    updateStatus("Session Expired or Deleted", true);
                 }
+            }, (err) => {
+                updateStatus("Firestore Connection Failed: " + err.code, true);
             });
 
-            // --- Tool Listeners ---
             toolBtns.forEach(btn => {
-                if(btn.id === 'tool-clear') return;
                 btn.addEventListener('click', () => {
                     toolBtns.forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     currentMode = btn.dataset.mode;
-                    if(currentMode !== 'laser') set(ref(rtdb, `sessions/${presentationId}/laser`), { active: false });
                 });
             });
 
             document.getElementById('tool-clear').addEventListener('click', () => {
+                remove(ref(rtdb, `sessions/${presentationId}/drawings/${currentPageNum}`));
                 set(ref(rtdb, `sessions/${presentationId}/clearSignal`), { timestamp: Date.now() });
-                set(ref(rtdb, `sessions/${presentationId}/laser`), { active: false });
+                clearInk();
             });
 
-            // --- NEW: Refresh Signal ---
-            refreshBtn.addEventListener('click', () => {
-                set(ref(rtdb, `sessions/${presentationId}/refreshSignal`), { timestamp: Date.now() });
-            });
+            document.getElementById('refresh-btn').addEventListener('click', () => location.reload());
+            retryBtn.addEventListener('click', () => location.reload());
 
-            // --- Touch/Mouse Input ---
-            const handleStart = (e) => {
-                if (e.target === touchPad) e.preventDefault();
-                isDrawing = true;
-                const coords = getCoords(e);
-                if (currentMode === 'laser') {
-                    set(ref(rtdb, `sessions/${presentationId}/laser`), { active: true, x: coords.x, y: coords.y });
-                } else if (currentMode === 'pen') {
-                    currentPath = [coords];
-                }
-            };
+            prevBtn.addEventListener('click', () => { if (currentPageNum > 1) updateDoc(docRef, { currentPage: currentPageNum - 1 }); });
+            nextBtn.addEventListener('click', () => { if (currentPageNum < totalPages) updateDoc(docRef, { currentPage: currentPageNum + 1 }); });
 
-            const handleMove = (e) => {
-                if (!isDrawing) return;
-                if (e.target === touchPad) e.preventDefault();
-                const coords = getCoords(e);
-                if (currentMode === 'laser') {
-                    set(ref(rtdb, `sessions/${presentationId}/laser`), { active: true, x: coords.x, y: coords.y });
-                } else if (currentMode === 'pen') {
-                    currentPath.push(coords);
-                    // To force "live" update on presenter, we can send intermediate paths, 
-                    // but for now, we send only on END to save bandwidth, unless requested otherwise.
-                    // If you want live drawing, we must push here, but that is heavy.
-                }
-            };
-
-            const handleEnd = (e) => {
-                isDrawing = false;
-                if (currentMode === 'laser') {
-                    set(ref(rtdb, `sessions/${presentationId}/laser`), { active: false });
-                } else if (currentMode === 'pen' && currentPath.length > 1) {
-                    push(ref(rtdb, `sessions/${presentationId}/drawings/${currentPage}`), {
-                        points: currentPath, color: "red", width: 4, timestamp: Date.now()
-                    });
-                    currentPath = [];
-                    // Force refresh signal after drawing to ensure presenter sees it immediately
-                    set(ref(rtdb, `sessions/${presentationId}/refreshSignal`), { timestamp: Date.now() });
-                }
-            };
-
-            touchPad.addEventListener('touchstart', handleStart, {passive: false});
-            touchPad.addEventListener('touchmove', handleMove, {passive: false});
-            touchPad.addEventListener('touchend', handleEnd);
-            touchPad.addEventListener('mousedown', handleStart);
-            touchPad.addEventListener('mousemove', handleMove);
-            touchPad.addEventListener('mouseup', handleEnd);
-
-            // --- Navigation ---
-            prevBtn.addEventListener('click', () => { if (currentPage > 1) updateDoc(docRef, { currentPage: currentPage - 1 }); });
-            nextBtn.addEventListener('click', () => { if (currentPage < totalPages) updateDoc(docRef, { currentPage: currentPage + 1 }); });
-            
-            window.addEventListener('beforeunload', () => set(ref(rtdb, `sessions/${presentationId}/laser`), { active: false }));
+            touchLayer.addEventListener('touchstart', handleStart, { passive: false });
+            touchLayer.addEventListener('touchmove', handleMove, { passive: false });
+            touchLayer.addEventListener('touchend', handleEnd);
+            touchLayer.addEventListener('mousedown', handleStart);
+            touchLayer.addEventListener('mousemove', handleMove);
+            window.addEventListener('mouseup', handleEnd);
+        } else {
+            updateStatus("Error: No Session ID Provided", true);
         }
     </script>
 </body>
