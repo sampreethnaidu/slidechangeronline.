@@ -10,71 +10,57 @@
     <style>
         body { font-family: 'Inter', sans-serif; touch-action: none; background-color: #111827; overflow: hidden; }
         
-        #main-container {
+        #slide-view-container {
             position: relative;
             width: 100%;
-            height: calc(100vh - 160px); /* Leave space for toolbar */
+            height: calc(100vh - 180px); /* Adjusted for extra button */
             display: flex;
             justify-content: center;
             align-items: center;
-            background: #000;
+            background: #111;
         }
 
-        /* The PDF layer */
         #pdf-canvas {
-            display: block;
             max-width: 100%;
             max-height: 100%;
-            z-index: 1;
+            display: block;
         }
 
-        /* The Drawing layer (Touch Pad) */
-        #annotation-canvas {
+        #touch-pad {
             position: absolute;
             top: 0;
             left: 0;
+            width: 100%;
+            height: 100%;
             z-index: 10;
-            touch-action: none;
+            touch-action: none; 
         }
 
         #toolbar {
-            height: 160px;
+            height: 180px;
             background: #1f2937;
             border-top: 1px solid #374151;
             padding: 10px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
             z-index: 20;
         }
 
         .tool-btn {
-            padding: 10px;
+            padding: 8px;
             background: #374151;
             border-radius: 8px;
             color: #d1d5db;
             border: 2px solid transparent;
             font-weight: 600;
             text-align: center;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
         }
         .tool-btn.active {
             border-color: #f59e0b;
             background: #4b5563;
             color: white;
-        }
-        
-        #laser-point {
-            position: absolute;
-            width: 15px;
-            height: 15px;
-            background: red;
-            border-radius: 50%;
-            box-shadow: 0 0 10px red;
-            z-index: 15;
-            pointer-events: none;
-            display: none;
-            transform: translate(-50%, -50%);
         }
     </style>
 </head>
@@ -84,14 +70,13 @@
         <p class="text-xl animate-pulse">Syncing Presentation...</p>
     </div>
 
-    <!-- Main View: PDF + Canvas + Laser -->
-    <div id="main-container" class="hidden">
+    <!-- Main View -->
+    <div id="slide-view-container" class="hidden">
         <canvas id="pdf-canvas"></canvas>
-        <canvas id="annotation-canvas"></canvas>
-        <div id="laser-point"></div>
+        <div id="touch-pad"></div>
     </div>
 
-    <!-- Controls -->
+    <!-- Toolbar -->
     <div id="toolbar" class="hidden">
         <div class="grid grid-cols-4 gap-2">
             <button class="tool-btn active" id="tool-pointer" data-mode="pointer">👆 Move</button>
@@ -102,15 +87,22 @@
 
         <div class="grid grid-cols-3 gap-2 h-full">
             <button id="prev-btn" class="bg-blue-600 rounded-lg font-bold text-xl active:scale-95">Prev</button>
-            <div class="flex items-center justify-center bg-gray-800 rounded-lg text-sm font-mono" id="page-indicator">-- / --</div>
+            
+            <!-- NEW: Refresh Button -->
+            <button id="refresh-btn" class="bg-purple-600 rounded-lg font-bold text-sm active:scale-95 flex flex-col items-center justify-center">
+                <span>🔄 Sync</span>
+                <span class="text-xs font-normal">Screen</span>
+            </button>
+            
             <button id="next-btn" class="bg-green-600 rounded-lg font-bold text-xl active:scale-95">Next</button>
         </div>
+        <div class="text-center text-xs text-gray-500" id="page-indicator">Page: -- / --</div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-        import { getDatabase, ref, set, push, onChildAdded, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+        import { getDatabase, ref, set, push, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCtlgsNhCEsKLHA-WmfoqQleW_n2kCQerI",
@@ -126,247 +118,166 @@
         const db = getFirestore(app);
         const rtdb = getDatabase(app);
 
-        // UI Elements
+        // ... (Existing UI Elements) ...
         const loadingMsg = document.getElementById('loading-message');
-        const mainContainer = document.getElementById('main-container');
+        const slideContainer = document.getElementById('slide-view-container');
         const toolbar = document.getElementById('toolbar');
+        const touchPad = document.getElementById('touch-pad');
         const pdfCanvas = document.getElementById('pdf-canvas');
         const pdfCtx = pdfCanvas.getContext('2d');
-        const annCanvas = document.getElementById('annotation-canvas');
-        const annCtx = annCanvas.getContext('2d');
-        const laser = document.getElementById('laser-point');
+        const toolBtns = document.querySelectorAll('.tool-btn');
         const pageIndicator = document.getElementById('page-indicator');
         const prevBtn = document.getElementById('prev-btn');
         const nextBtn = document.getElementById('next-btn');
-        const toolBtns = document.querySelectorAll('.tool-btn');
+        const refreshBtn = document.getElementById('refresh-btn'); // NEW
 
-        // State
         let pdfDoc = null;
         let currentPage = 1;
         let totalPages = 0;
         let currentMode = 'pointer'; 
         let isDrawing = false;
-        let isRendering = false;
         let currentPath = [];
+        let isRendering = false;
 
         pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
 
         const params = new URLSearchParams(window.location.search);
         const presentationId = params.get('id');
 
-        // Wake Lock
-        async function requestWakeLock() {
-            try { await navigator.wakeLock.request('screen'); } catch (err) {}
-        }
-
-        // --- Render PDF ---
+        // ... (Existing Render Logic) ...
         function renderPage(num) {
             if (!pdfDoc || isRendering) return;
             isRendering = true;
 
             pdfDoc.getPage(num).then(function(page) {
                 const viewport = page.getViewport({ scale: 1 });
-                // Fit to container
-                const containerWidth = mainContainer.clientWidth;
-                const containerHeight = mainContainer.clientHeight;
-                
+                const containerWidth = slideContainer.clientWidth;
+                const containerHeight = slideContainer.clientHeight;
                 const scaleX = containerWidth / viewport.width;
                 const scaleY = containerHeight / viewport.height;
                 const scale = Math.min(scaleX, scaleY);
-                
                 const scaledViewport = page.getViewport({ scale: scale });
 
-                // Set Canvas Sizes
                 pdfCanvas.width = scaledViewport.width;
                 pdfCanvas.height = scaledViewport.height;
-                annCanvas.width = scaledViewport.width;
-                annCanvas.height = scaledViewport.height;
+                touchPad.style.width = `${scaledViewport.width}px`;
+                touchPad.style.height = `${scaledViewport.height}px`;
 
-                // Center them using CSS margins if needed, but Flexbox handles it
-                
-                const renderContext = {
-                    canvasContext: pdfCtx,
-                    viewport: scaledViewport
-                };
-                
-                page.render(renderContext).promise.then(() => {
-                    isRendering = false;
-                    // Reload drawings for this page if any
-                    // (For simplicity in Remote, we just clear for now to avoid double drawing, 
-                    // but ideally we fetch existing RTDB paths here too)
-                    annCtx.clearRect(0, 0, annCanvas.width, annCanvas.height);
-                });
+                const renderContext = { canvasContext: pdfCtx, viewport: scaledViewport };
+                page.render(renderContext).promise.then(() => { isRendering = false; });
             });
         }
 
         // --- Drawing Logic ---
-        function drawLocalStroke(start, end, color, width) {
-            annCtx.beginPath();
-            annCtx.strokeStyle = color;
-            annCtx.lineWidth = width;
-            annCtx.lineCap = "round";
-            annCtx.lineJoin = "round";
-            
-            const w = annCanvas.width;
-            const h = annCanvas.height;
-
-            annCtx.moveTo(start.x * w, start.y * h);
-            annCtx.lineTo(end.x * w, end.y * h);
-            annCtx.stroke();
+        function getCoords(e) {
+            const rect = touchPad.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: (clientX - rect.left) / rect.width,
+                y: (clientY - rect.top) / rect.height
+            };
         }
 
         // --- Init ---
         if (presentationId) {
-            requestWakeLock();
-            
             const docRef = doc(db, "presentations", presentationId);
             
-            // 1. Listen for Session State (Page changes)
             onSnapshot(docRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    
                     if (!pdfDoc && data.fileUrl) {
                         pdfjsLib.getDocument(data.fileUrl).promise.then((pDoc) => {
                             pdfDoc = pDoc;
                             loadingMsg.classList.add('hidden');
-                            mainContainer.classList.remove('hidden');
+                            slideContainer.classList.remove('hidden');
                             toolbar.classList.remove('hidden');
-                            
                             currentPage = data.currentPage || 1;
                             totalPages = pdfDoc.numPages; 
                             renderPage(currentPage);
-                            pageIndicator.textContent = `${currentPage} / ${totalPages}`;
+                            pageIndicator.textContent = `Page: ${currentPage} / ${totalPages}`;
                         });
-                    } 
-                    else if (pdfDoc && data.currentPage !== currentPage) {
+                    } else if (pdfDoc && data.currentPage !== currentPage) {
                         currentPage = data.currentPage;
                         renderPage(currentPage);
-                        pageIndicator.textContent = `${currentPage} / ${totalPages}`;
+                        pageIndicator.textContent = `Page: ${currentPage} / ${totalPages}`;
                     }
                 }
             });
 
-            // 2. Listen for "Clear" from other devices
-            onValue(ref(rtdb, `sessions/${presentationId}/clearSignal`), (snapshot) => {
-                 const signal = snapshot.val();
-                 if(signal && signal.timestamp > Date.now() - 2000) {
-                     annCtx.clearRect(0, 0, annCanvas.width, annCanvas.height);
-                 }
-            });
-
-            // 3. Listen for Laser (Sync laser from Presenter if needed, or just self)
-            // For now, we only DRAW our own laser locally to save complexity
-
-            // --- Tool Selection ---
+            // --- Tool Listeners ---
             toolBtns.forEach(btn => {
                 if(btn.id === 'tool-clear') return;
                 btn.addEventListener('click', () => {
                     toolBtns.forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     currentMode = btn.dataset.mode;
-                    if(currentMode !== 'laser') {
-                        laser.style.display = 'none';
-                        set(ref(rtdb, `sessions/${presentationId}/laser`), { active: false });
-                    }
+                    if(currentMode !== 'laser') set(ref(rtdb, `sessions/${presentationId}/laser`), { active: false });
                 });
             });
 
             document.getElementById('tool-clear').addEventListener('click', () => {
-                annCtx.clearRect(0, 0, annCanvas.width, annCanvas.height); // Local clear
-                set(ref(rtdb, `sessions/${presentationId}/clearSignal`), { timestamp: Date.now() }); // Remote clear
+                set(ref(rtdb, `sessions/${presentationId}/clearSignal`), { timestamp: Date.now() });
                 set(ref(rtdb, `sessions/${presentationId}/laser`), { active: false });
             });
 
-            // --- Touch/Mouse Input ---
-            function getCoords(e) {
-                const rect = annCanvas.getBoundingClientRect();
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                // Return normalized (0-1)
-                return {
-                    x: (clientX - rect.left) / rect.width,
-                    y: (clientY - rect.top) / rect.height
-                };
-            }
+            // --- NEW: Refresh Signal ---
+            refreshBtn.addEventListener('click', () => {
+                set(ref(rtdb, `sessions/${presentationId}/refreshSignal`), { timestamp: Date.now() });
+            });
 
+            // --- Touch/Mouse Input ---
             const handleStart = (e) => {
-                if (e.target !== annCanvas) return;
-                e.preventDefault();
+                if (e.target === touchPad) e.preventDefault();
                 isDrawing = true;
                 const coords = getCoords(e);
-                
                 if (currentMode === 'laser') {
-                    laser.style.display = 'block';
-                    laser.style.left = `${coords.x * 100}%`;
-                    laser.style.top = `${coords.y * 100}%`;
                     set(ref(rtdb, `sessions/${presentationId}/laser`), { active: true, x: coords.x, y: coords.y });
                 } else if (currentMode === 'pen') {
-                    currentPath = [coords]; // Start new path
+                    currentPath = [coords];
                 }
             };
 
             const handleMove = (e) => {
                 if (!isDrawing) return;
-                e.preventDefault();
+                if (e.target === touchPad) e.preventDefault();
                 const coords = getCoords(e);
-                
-                if (coords.x < 0 || coords.x > 1 || coords.y < 0 || coords.y > 1) return;
-
                 if (currentMode === 'laser') {
-                    laser.style.left = `${coords.x * 100}%`;
-                    laser.style.top = `${coords.y * 100}%`;
                     set(ref(rtdb, `sessions/${presentationId}/laser`), { active: true, x: coords.x, y: coords.y });
                 } else if (currentMode === 'pen') {
-                    // Draw LOCALLY immediately
-                    const lastPoint = currentPath[currentPath.length - 1];
-                    drawLocalStroke(lastPoint, coords, "red", 3);
-                    
                     currentPath.push(coords);
+                    // To force "live" update on presenter, we can send intermediate paths, 
+                    // but for now, we send only on END to save bandwidth, unless requested otherwise.
+                    // If you want live drawing, we must push here, but that is heavy.
                 }
             };
 
             const handleEnd = (e) => {
                 isDrawing = false;
                 if (currentMode === 'laser') {
-                    laser.style.display = 'none';
                     set(ref(rtdb, `sessions/${presentationId}/laser`), { active: false });
                 } else if (currentMode === 'pen' && currentPath.length > 1) {
-                    // Send entire stroke to RTDB
                     push(ref(rtdb, `sessions/${presentationId}/drawings/${currentPage}`), {
-                        points: currentPath,
-                        color: "red",
-                        width: 3,
-                        timestamp: Date.now()
+                        points: currentPath, color: "red", width: 4, timestamp: Date.now()
                     });
                     currentPath = [];
+                    // Force refresh signal after drawing to ensure presenter sees it immediately
+                    set(ref(rtdb, `sessions/${presentationId}/refreshSignal`), { timestamp: Date.now() });
                 }
             };
 
-            // Bind events to the CANVAS layer
-            annCanvas.addEventListener('touchstart', handleStart, {passive: false});
-            annCanvas.addEventListener('touchmove', handleMove, {passive: false});
-            annCanvas.addEventListener('touchend', handleEnd);
-            annCanvas.addEventListener('mousedown', handleStart);
-            annCanvas.addEventListener('mousemove', handleMove);
-            annCanvas.addEventListener('mouseup', handleEnd);
+            touchPad.addEventListener('touchstart', handleStart, {passive: false});
+            touchPad.addEventListener('touchmove', handleMove, {passive: false});
+            touchPad.addEventListener('touchend', handleEnd);
+            touchPad.addEventListener('mousedown', handleStart);
+            touchPad.addEventListener('mousemove', handleMove);
+            touchPad.addEventListener('mouseup', handleEnd);
 
             // --- Navigation ---
-            prevBtn.addEventListener('click', () => {
-                if (currentPage > 1) {
-                    updateDoc(docRef, { currentPage: currentPage - 1 });
-                }
-            });
-            nextBtn.addEventListener('click', () => {
-                if (currentPage < totalPages) {
-                    updateDoc(docRef, { currentPage: currentPage + 1 });
-                }
-            });
+            prevBtn.addEventListener('click', () => { if (currentPage > 1) updateDoc(docRef, { currentPage: currentPage - 1 }); });
+            nextBtn.addEventListener('click', () => { if (currentPage < totalPages) updateDoc(docRef, { currentPage: currentPage + 1 }); });
             
-            // Cleanup
-            window.addEventListener('beforeunload', () => {
-                set(ref(rtdb, `sessions/${presentationId}/laser`), { active: false });
-            });
+            window.addEventListener('beforeunload', () => set(ref(rtdb, `sessions/${presentationId}/laser`), { active: false }));
         }
     </script>
 </body>
