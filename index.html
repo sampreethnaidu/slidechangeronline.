@@ -202,6 +202,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getDatabase } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
         import { 
             getAuth, 
             GoogleAuthProvider, 
@@ -225,7 +226,8 @@
             projectId: "slidechangeronline",
             storageBucket: "slidechangeronline.firebasestorage.app",
             messagingSenderId: "1013262596418",
-            appId: "1:1013262596418:web:b7c9ee7e6da7545ff370db"
+            appId: "1:1013262596418:web:b7c9ee7e6da7545ff370db",
+            databaseURL: "https://slidechangeronline-default-rtdb.asia-southeast1.firebasedatabase.app/"
         };
         
         const app = initializeApp(firebaseConfig);
@@ -233,6 +235,7 @@
         const storage = getStorage(app);
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
+        const rtdb = getDatabase(app);
         
         const authSection = document.getElementById('auth-section');
         const loggedInSection = document.getElementById('logged-in-section');
@@ -534,8 +537,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
