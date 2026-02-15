@@ -2,27 +2,42 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Presenter View - SlideChangerOnline</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Presenter - SlideChangerOnline</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; overflow: hidden; background-color: #1f2937; }
-        #presenter-container {
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #000; 
+            overflow: hidden; 
+            margin: 0; 
+            padding: 0; 
+            width: 100vw;
+            height: 100vh;
+        }
+        #presenter-wrapper {
             position: relative;
+            width: 100vw;
+            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
+            background: #111;
         }
-        #pdf-canvas {
-            display: block;
-            width: 100%;
-            height: auto;
-            z-index: 1;
+        #canvas-container {
+            position: relative;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            background: #fff;
+        }
+        #pdf-canvas { 
+            display: block; 
+            z-index: 1; 
         }
         #annotation-canvas {
             position: absolute;
@@ -35,39 +50,65 @@
         }
         #laser-point {
             position: absolute;
-            width: 20px;
-            height: 20px;
-            background: red;
+            width: 24px;
+            height: 24px;
+            background: radial-gradient(circle, rgba(255,0,0,1) 0%, rgba(255,0,0,0) 70%);
             border-radius: 50%;
-            box-shadow: 0 0 10px red;
-            z-index: 3;
+            box-shadow: 0 0 15px 5px rgba(255, 0, 0, 0.8);
+            z-index: 10;
             pointer-events: none;
             display: none;
             transform: translate(-50%, -50%);
+            /* Smooth transition for movement */
+            transition: left 0.08s linear, top 0.08s linear;
+        }
+        .ui-overlay {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+            opacity: 0.3;
+            transition: opacity 0.3s;
+        }
+        .ui-overlay:hover { opacity: 1; }
+        .control-btn {
+            background: rgba(31, 41, 55, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.1);
         }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen">
-    
-    <div id="presenter-container">
-        <canvas id="pdf-canvas"></canvas>
-        <canvas id="annotation-canvas"></canvas>
-        <div id="laser-point"></div>
+<body>
+
+    <div id="presenter-wrapper">
+        <div id="canvas-container">
+            <canvas id="pdf-canvas"></canvas>
+            <canvas id="annotation-canvas"></canvas>
+            <div id="laser-point"></div>
+        </div>
     </div>
 
-    <!-- Loading Overlay -->
-    <div id="loading-message" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 text-white z-50">
-        <svg class="animate-spin h-10 w-10 text-white mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        <p class="text-xl">Loading presentation...</p>
+    <!-- UI Overlay for Fullscreen -->
+    <div class="ui-overlay">
+        <button id="fullscreen-btn" class="control-btn" title="Toggle Fullscreen">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
+        </button>
     </div>
+
+    <div id="status-message" class="fixed top-4 left-4 text-white text-xs bg-black/50 px-3 py-1 rounded z-50">Initializing...</div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-        import { getDatabase, ref, onValue, onChildAdded, remove, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getDatabase, ref, onValue, onChildAdded, off } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCtlgsNhCEsKLHA-WmfoqQleW_n2kCQerI",
@@ -76,87 +117,127 @@
             storageBucket: "slidechangeronline.firebasestorage.app",
             messagingSenderId: "1013262596418",
             appId: "1:1013262596418:web:b7c9ee7e6da7545ff370db",
-            databaseURL: "https://slidechangeronline-default-rtdb.asia-southeast1.firebasedatabase.app/"
+            databaseURL: "https://slidechangeronline-default-rtdb.firebaseio.com/"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const rtdb = getDatabase(app);
 
-        let pdfDoc = null;
-        let pageNum = 1;
-        let isRendering = false;
-        let scale = 1; 
-        let totalPages = 0; // NEW: To track total pages for keyboard controls
-
-        const container = document.getElementById('presenter-container');
+        const container = document.getElementById('canvas-container');
         const pdfCanvas = document.getElementById('pdf-canvas');
         const pdfCtx = pdfCanvas.getContext('2d');
         const annCanvas = document.getElementById('annotation-canvas');
         const annCtx = annCanvas.getContext('2d');
         const laser = document.getElementById('laser-point');
-        const loadingMsg = document.getElementById('loading-message');
+        const statusMsg = document.getElementById('status-message');
+        const fsBtn = document.getElementById('fullscreen-btn');
 
         pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
+
+        let pdfDoc = null;
+        let currentPageNum = 1;
+        let isRendering = false;
+        let currentDrawingsRef = null;
 
         const params = new URLSearchParams(window.location.search);
         const presentationId = params.get('id');
 
-        // Wake Lock
-        let wakeLock = null;
-        async function requestWakeLock() {
+        async function renderPage(num) {
+            if (!pdfDoc || isRendering) return;
+            isRendering = true;
+            statusMsg.textContent = `Rendering page ${num}...`;
+
             try {
-                wakeLock = await navigator.wakeLock.request('screen');
-                console.log('Screen Wake Lock active');
+                const page = await pdfDoc.getPage(num);
+                const viewport = page.getViewport({ scale: 1 });
+                const scale = Math.min(window.innerWidth / viewport.width, window.innerHeight / viewport.height) * 0.99;
+                const scaledViewport = page.getViewport({ scale });
+
+                const width = Math.floor(scaledViewport.width);
+                const height = Math.floor(scaledViewport.height);
+
+                pdfCanvas.width = width;
+                pdfCanvas.height = height;
+                annCanvas.width = width;
+                annCanvas.height = height;
+                
+                container.style.width = `${width}px`;
+                container.style.height = `${height}px`;
+
+                await page.render({ canvasContext: pdfCtx, viewport: scaledViewport }).promise;
+                currentPageNum = num;
+                statusMsg.textContent = `Page ${num} synced.`;
+                
+                clearAnnotations();
+                attachRealtimeInkListener(num);
             } catch (err) {
-                console.error(`${err.name}, ${err.message}`);
+                console.error("Render error:", err);
+            } finally {
+                isRendering = false;
             }
         }
 
-        // --- PDF Rendering ---
-        function renderPage(num) {
-            if (!pdfDoc || isRendering) return;
-            isRendering = true;
-
-            pdfDoc.getPage(num).then(function(page) {
-                const viewport = page.getViewport({ scale: 1 });
-                const availableWidth = window.innerWidth;
-                const availableHeight = window.innerHeight;
-                
-                const scaleX = availableWidth / viewport.width;
-                const scaleY = availableHeight / viewport.height;
-                scale = Math.min(scaleX, scaleY) * 0.95; 
-                
-                const scaledViewport = page.getViewport({ scale: scale });
-
-                pdfCanvas.width = scaledViewport.width;
-                pdfCanvas.height = scaledViewport.height;
-                annCanvas.width = scaledViewport.width;
-                annCanvas.height = scaledViewport.height;
-                
-                container.style.width = `${scaledViewport.width}px`;
-                container.style.height = `${scaledViewport.height}px`;
-
-                const renderContext = {
-                    canvasContext: pdfCtx,
-                    viewport: scaledViewport
-                };
-                
-                page.render(renderContext).promise.then(() => {
-                    isRendering = false;
-                    loadingMsg.classList.add('hidden');
-                    // Once rendered, generate preview for remote
-                    // (Optional: Implement preview gen if needed, removed for speed here)
-                });
-            });
-            pageNum = num;
+        function clearAnnotations() {
+            annCtx.clearRect(0, 0, annCanvas.width, annCanvas.height);
         }
 
-        // --- RTDB Listeners (Annotations) ---
-        function setupRealtimeListeners() {
-            if (!presentationId) return;
+        function drawStroke(stroke) {
+            if (!stroke.points || stroke.points.length < 2) return;
+            annCtx.beginPath();
+            annCtx.strokeStyle = stroke.color || "red";
+            annCtx.lineWidth = stroke.width || 4;
+            annCtx.lineCap = "round";
+            annCtx.lineJoin = "round";
 
-            // Listen for Laser position
+            const w = annCanvas.width;
+            const h = annCanvas.height;
+            annCtx.moveTo(stroke.points[0].x * w, stroke.points[0].y * h);
+            for (let i = 1; i < stroke.points.length; i++) {
+                annCtx.lineTo(stroke.points[i].x * w, stroke.points[i].y * h);
+            }
+            annCtx.stroke();
+        }
+
+        function attachRealtimeInkListener(num) {
+            // Clean up old listener
+            if (currentDrawingsRef) {
+                off(currentDrawingsRef);
+            }
+
+            currentDrawingsRef = ref(rtdb, `sessions/${presentationId}/drawings/${num}`);
+            
+            // onChildAdded will fire for all existing children immediately (history)
+            // and then stay active for new children (real-time)
+            onChildAdded(currentDrawingsRef, (snapshot) => {
+                const stroke = snapshot.val();
+                drawStroke(stroke);
+            });
+        }
+
+        fsBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        });
+
+        if (presentationId) {
+            onSnapshot(doc(db, "presentations", presentationId), (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (!pdfDoc && data.fileUrl) {
+                        pdfjsLib.getDocument(data.fileUrl).promise.then(doc => {
+                            pdfDoc = doc;
+                            renderPage(data.currentPage || 1);
+                        });
+                    } else if (pdfDoc && data.currentPage !== currentPageNum) {
+                        renderPage(data.currentPage);
+                    }
+                }
+            });
+
             onValue(ref(rtdb, `sessions/${presentationId}/laser`), (snapshot) => {
                 const data = snapshot.val();
                 if (data && data.active) {
@@ -168,102 +249,21 @@
                 }
             });
 
-            // Listen for Drawings (Strokes)
-            // We listen for new strokes added to the current page
-            onChildAdded(ref(rtdb, `sessions/${presentationId}/drawings/${pageNum}`), (snapshot) => {
-                const stroke = snapshot.val();
-                drawStroke(stroke);
-            });
-            
-            // Listen for Clear Signal
             onValue(ref(rtdb, `sessions/${presentationId}/clearSignal`), (snapshot) => {
-                const signal = snapshot.val();
-                if(signal && signal.timestamp > Date.now() - 2000) { // Only respect recent clears
-                     annCtx.clearRect(0, 0, annCanvas.width, annCanvas.height);
+                if (snapshot.exists()) clearAnnotations();
+            });
+
+            onValue(ref(rtdb, `sessions/${presentationId}/refreshSignal`), (snapshot) => {
+                if (snapshot.exists()) {
+                    clearAnnotations();
+                    attachRealtimeInkListener(currentPageNum);
                 }
             });
         }
 
-        function drawStroke(stroke) {
-            if (!stroke.points || stroke.points.length < 2) return;
-            
-            annCtx.beginPath();
-            annCtx.strokeStyle = stroke.color;
-            annCtx.lineWidth = stroke.width;
-            annCtx.lineCap = "round";
-            annCtx.lineJoin = "round";
-
-            const w = annCanvas.width;
-            const h = annCanvas.height;
-
-            const start = stroke.points[0];
-            annCtx.moveTo(start.x * w, start.y * h);
-
-            for (let i = 1; i < stroke.points.length; i++) {
-                const p = stroke.points[i];
-                annCtx.lineTo(p.x * w, p.y * h);
-            }
-            annCtx.stroke();
-        }
-
-        // NEW: Function to change the page via remote OR keyboard
-        async function changePage(newPage) {
-            if (newPage > 0 && newPage <= totalPages) {
-                const docRef = doc(db, "presentations", presentationId);
-                await updateDoc(docRef, { currentPage: newPage });
-            }
-        }
-
-        // --- Init ---
-        if (presentationId) {
-            requestWakeLock();
-            
-            onSnapshot(doc(db, "presentations", presentationId), (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    totalPages = data.totalPages; // Store total pages
-
-                    if (!pdfDoc && data.fileUrl) {
-                        pdfjsLib.getDocument(data.fileUrl).promise.then((pDoc) => {
-                            pdfDoc = pDoc;
-                            renderPage(data.currentPage || 1);
-                            setupRealtimeListeners();
-                        });
-                    } else if (pdfDoc && data.currentPage !== pageNum) {
-                        // Clear annotations when page changes
-                        annCtx.clearRect(0, 0, annCanvas.width, annCanvas.height);
-                        renderPage(data.currentPage);
-                        // NOTE: In a robust app, we'd detach old listeners and attach new ones for the new page.
-                        // For simplicity in this step, we just clear the canvas.
-                        // The `onChildAdded` listener above is bound to the *initial* pageNum.
-                        // To fix this, we need to re-bind listeners on page change.
-                        // Let's do that in the next refinement step once the basic rendering works.
-                    }
-                }
-            });
-        }
-
-        window.addEventListener('resize', () => {
-            if(pdfDoc) renderPage(pageNum);
+        window.addEventListener('resize', () => { 
+            if(pdfDoc) renderPage(currentPageNum); 
         });
-        
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') {
-                requestWakeLock();
-            }
-        });
-
-         // NEW: Keyboard Controls Event Listener
-        document.addEventListener('keydown', (event) => {
-            if (!pdfDoc) return; // Don't do anything if PDF isn't loaded
-            
-            if (event.key === 'ArrowRight') {
-                changePage(pageNum + 1);
-            } else if (event.key === 'ArrowLeft') {
-                changePage(pageNum - 1);
-            }
-        });
-
     </script>
 </body>
 </html>
