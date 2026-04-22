@@ -128,12 +128,11 @@
             if (user) {
                 const userTier = await getUserTier(user.uid);
                 
-                // RECTIFIED: UI State Logic Synced with index.html
+                // RECTIFIED: UI State Logic correctly hides the button for premium
                 if (userTier === 'premium') {
                     userTierDisplay.textContent = 'PRO';
                     userTierDisplay.className = 'font-bold tracking-wide text-amber-400';
-                    upgradeLinkDash.textContent = "View Plan Details";
-                    upgradeLinkDash.classList.remove('hidden');
+                    upgradeLinkDash.classList.add('hidden'); // Fix applied here
                     premiumBadgeDash.classList.remove('hidden');
                 } else {
                     userTierDisplay.textContent = 'Free';
@@ -154,7 +153,6 @@
             if (!userId) return "free";
             const userRef = doc(db, "users", userId);
             const userDoc = await getDoc(userRef);
-            // RECTIFIED: Aligned to strictly read 'tier' first
             return userDoc.exists() ? userDoc.data().tier || userDoc.data().accountTier || "free" : "free";
         }
 
