@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Admin - Ad Network</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .status-pending { background-color: rgba(234, 179, 8, 0.2); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.4); }
+        .status-active { background-color: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); }
+        .status-rejected { background-color: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+        .status-halted { background-color: rgba(100, 116, 139, 0.2); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.4); }
+    </style>
+</head>
+<body class="min-h-screen p-6">
+
+    <div id="security-overlay" class="fixed inset-0 bg-slate-900 z-50 flex flex-col items-center justify-center">
+        <svg class="animate-spin h-10 w-10 text-amber-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        <h2 class="text-xl font-bold text-gray-300">Verifying Admin Credentials...</h2>
+    </div>
+
+    <div id="admin-content" class="hidden max-w-7xl mx-auto">
+        <div class="flex justify-between items-center mb-8 border-b border-slate-700 pb-4">
+            <div>
+                <h1 class="text-3xl font-bold text-white flex items-center gap-3">
+                    <span class="text-amber-500">🛡️</span> Ad Network Command Center
+                </h1>
+                <p class="text-slate-400 mt-1">Live Moderation & Analytics Queue</p>
+            </div>
+            <a href="./dashboard.html" class="text-amber-400 hover:text-amber-300 text-sm">Return to Dashboard &rarr;</a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="ads-container">
+            </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCtlgsNhCEsKLHA-WmfoqQleW_n2kCQerI",
+            authDomain: "slidechangeronline.firebaseapp.com",
+            projectId: "slidechangeronline",
+            storageBucket: "slidechangeronline.firebasestorage.app",
+            messagingSenderId: "1013262596418",
+            appId: "1:1013262596418:web:b7c9ee7e6da7545ff370db"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const MASTER_ADMIN_UID = "X7uzhHpas6XfHz12FaANF0Shlvm2";
+        
+        const securityOverlay = document.getElementById('security-overlay');
+        const adminContent = document.getElementById('admin-content');
+        const adsContainer = document.getElementById('ads-container');
+
+        // 1. Hardcore Security Gate
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = './index.html';
+                return;
+            }
+            if (user.uid !== MASTER_ADMIN_UID) {
+                document.body.innerHTML = '<div class="h-screen flex items-center justify-center bg-red-900"><h1 class="text-4xl text-white font-bold">⚠️ ACCESS DENIED. UNAUTHORIZED CLEARANCE.</h1></div>';
+                return;
+            }
+            
+            // Access Granted
+            securityOverlay.classList.add('hidden');
+            adminContent.classList.remove('hidden');
+            initializeLiveAdQueue();
+        });
+
+        // 2. Real-time Ad Listener
+        function initializeLiveAdQueue() {
+            const adsRef = collection(db, "ads");
+            const q = query(adsRef, orderBy("createdAt", "desc"));
+
+            onSnapshot(q, (snapshot) => {
+                adsContainer.innerHTML = ''; // Clear board
+                
+                if (snapshot.empty) {
+                    adsContainer.innerHTML = '<div class="col-span-full text-center text-slate-500 py-10">No ads in the system yet.</div>';
+                    return;
+                }
+
+                snapshot.forEach((adDoc) => {
+                    const ad = adDoc.data();
+                    renderAdCard(adDoc.id, ad);
+                });
+            }, (error) => {
+                console.error("Database connection failed:", error);
+            });
+        }
+
+        // 3. Render UI Component
+        function renderAdCard(docId, ad) {
+            const card = document.createElement('div');
+            card.className = "glass-panel p-5 rounded-xl shadow-lg flex flex-col justify-between";
+            
+            const dateStr = ad.createdAt ? ad.createdAt.toDate().toLocaleString() : 'Unknown Date';
+            
+            card.innerHTML = `
+                <div>
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="text-xs font-mono text-slate-400">ID: ${docId.substring(0,8)}</span>
+                        <span class="text-xs font-bold px-2 py-1 rounded uppercase tracking-wider status-${ad.status}">${ad.status}</span>
+                    </div>
+                    
+                    <div class="aspect-video bg-slate-800 rounded-lg mb-4 overflow-hidden border border-slate-700 flex items-center justify-center">
+                        <img src="${ad.imageUrl}" alt="Ad Banner" class="w-full h-full object-cover object-center" onerror="this.src=''; this.alt='Image Missing or Blocked'; this.className='text-slate-500 text-sm p-4';">
+                    </div>
+                    
+                    <div class="space-y-2 mb-4">
+                        <p class="text-sm text-slate-300"><strong>Target URL:</strong> <a href="${ad.targetUrl}" target="_blank" class="text-blue-400 hover:underline break-all">${ad.targetUrl}</a></p>
+                        <p class="text-sm text-slate-300"><strong>Owner UID:</strong> <span class="font-mono text-xs">${ad.ownerId}</span></p>
+                        <p class="text-sm text-slate-300"><strong>Created:</strong> ${dateStr}</p>
+                        <div class="flex justify-between items-center bg-slate-800/50 p-2 rounded border border-slate-700 mt-2">
+                            <span class="text-sm text-slate-400">Total Clicks</span>
+                            <span class="font-bold text-amber-400">${ad.clicks || 0}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2 mt-2 pt-4 border-t border-slate-700">
+                    <button onclick="updateAdState('${docId}', 'active')" class="bg-green-600/20 text-green-400 border border-green-600 hover:bg-green-600 hover:text-white font-semibold py-2 px-2 rounded transition text-sm">Approve</button>
+                    <button onclick="updateAdState('${docId}', 'rejected')" class="bg-red-600/20 text-red-400 border border-red-600 hover:bg-red-600 hover:text-white font-semibold py-2 px-2 rounded transition text-sm">Reject</button>
+                    <button onclick="updateAdState('${docId}', 'pending')" class="col-span-2 bg-slate-700/50 text-slate-300 hover:bg-slate-600 font-semibold py-2 px-2 rounded transition text-sm">Set to Pending</button>
+                </div>
+            `;
+            adsContainer.appendChild(card);
+        }
+
+        // 4. Admin Action Mutator
+        window.updateAdState = async function(docId, newStatus) {
+            if(!confirm(`Are you sure you want to change this ad to ${newStatus.toUpperCase()}?`)) return;
+            
+            try {
+                const adRef = doc(db, "ads", docId);
+                await updateDoc(adRef, { status: newStatus });
+                // Note: The UI updates automatically because of onSnapshot!
+            } catch (error) {
+                alert("Override Failed: " + error.message);
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>
