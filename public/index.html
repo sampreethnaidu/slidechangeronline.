@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>SlideChangerOnline | Present PDFs Remotely with Your Phone</title>
+    
+    <link rel="icon" type="image/png" href="Screenshot 2025-09-19 201612.png">
+
+    <meta name="description" content="A free online tool to present your PDF files on any screen and use your phone as a secure remote control. No downloads, no USB drives. Just upload and present.">
+    <meta name="keywords" content="pdf presenter, remote presentation, online slide changer, phone as remote, pdf slides, web presenter">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif;
+            background-color: #111827;
+            background-image: url('Screenshot 2025-09-19 204654.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            transition: background-image 1s ease-in-out;
+        }
+        .hidden { display: none; }
+        .backdrop-blur-custom {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            background-color: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "SlideChangerOnline",
+      "applicationCategory": "ProductivityApplication",
+      "operatingSystem": "Web",
+      "description": "A free online tool to present PDF files on any screen and use your phone as a secure remote control.",
+      "url": "https://www.slidechangeronline.me",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    }
+    </script>
+</head>
+<body class="flex flex-col min-h-screen p-4">
+    <div class="absolute top-4 left-4 z-20">
+        <a href="#">
+            <img src="Screenshot 2025-09-19 201612.png" alt="Logo" class="h-16 w-auto">
+        </a>
+    </div>
+     <div class="absolute bottom-4 right-4 z-20">
+        <a href="#">
+            <img src="Screenshot 2025-09-19 201612.png" alt="Logo" class="h-16 w-auto">
+        </a>
+    </div>
+
+    <main class="flex-grow flex items-center justify-center w-full">
+        <div class="backdrop-blur-custom p-8 rounded-2xl shadow-2xl text-center w-full max-w-lg mx-4">
+            
+            <div id="main-title-section">
+                <h1 class="text-4xl font-bold text-white mb-2">SlideChangerOnline</h1>
+                <p class="text-gray-300 mb-6">The easiest way to present your PDFs, remotely.</p>
+            </div>
+
+            <div id="join-with-code-section" class="mb-8 border-t border-b border-gray-700 py-6">
+                <h2 class="text-xl font-semibold text-white mb-3">Join a Session</h2>
+                <input type="number" id="session-code-input" placeholder="Enter 8-digit code" class="w-full bg-gray-700 text-white text-center p-3 rounded-lg border border-gray-600 focus:ring-amber-500 focus:border-amber-500 mb-4" oninput="this.value=this.value.slice(0,8)">
+                <div class="flex gap-4">
+                    <button id="join-presenter-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition">Join as Presenter</button>
+                    <button id="join-remote-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition">Join as Remote</button>
+                </div>
+                <p id="join-error" class="text-red-400 text-sm mt-3 hidden">Invalid or expired code. Please try again.</p>
+            </div>
+            
+            <div id="auth-section">
+                <p class="mb-4 text-gray-200">Or, sign in to create your own session.</p>
+                <div id="login-form">
+                    <input type="email" id="login-email" placeholder="Email" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-3 text-center">
+                    <input type="password" id="login-password" placeholder="Password" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-4 text-center">
+                    <button id="login-email-btn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-lg transition mb-3 flex items-center justify-center">Sign In</button>
+                    <p class="text-sm text-gray-400">Don't have an account? <button id="show-register-btn" class="text-amber-400 hover:underline">Create one</button></p>
+                </div>
+                <div id="register-form" class="hidden">
+                    <input type="text" id="register-name" placeholder="Your Name" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-3 text-center">
+                    <input type="email" id="register-email" placeholder="Email" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-3 text-center">
+                    <input type="password" id="register-password" placeholder="Password" class="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 mb-4 text-center">
+                    <button id="register-email-btn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-lg transition mb-3 flex items-center justify-center">Create Account</button>
+                    <p class="text-sm text-gray-400">Already have an account? <button id="show-login-btn" class="text-amber-400 hover:underline">Sign In</button></p>
+                </div>
+                <p id="auth-error" class="text-red-400 text-sm mt-3 hidden"></p>
+                <div class="my-6 flex items-center">
+                    <div class="flex-grow border-t border-gray-600"></div>
+                    <span class="flex-shrink mx-4 text-gray-400">OR</span>
+                    <div class="flex-grow border-t border-gray-600"></div>
+                </div>
+                <button id="login-google-btn" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg transition duration-300 flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></svg>
+                    Sign In with Google
+                </button>
+            </div>
+
+            <div id="logged-in-section" class="hidden">
+                <div class="flex justify-center items-center gap-4 mb-2">
+                    <p class="text-lg text-gray-200">Welcome, <span id="user-name" class="font-semibold text-white"></span>!</p>
+                    <a href="./dashboard.html" class="text-sm text-amber-400 hover:text-amber-300 hover:underline">Dashboard</a>
+                    <button id="logout-btn" class="text-sm text-amber-400 hover:text-amber-300 hover:underline">Sign out</button>
+                </div>
+                
+                <div id="subscription-status" class="mb-6 flex flex-col items-center justify-center">
+                    <p class="text-gray-400 text-sm">Account Status: <span id="user-tier-display" class="font-semibold text-gray-300">Loading...</span></p>
+                    
+                    <a id="upgrade-link-index" href="./pricing.html" class="hidden mt-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition shadow-lg inline-block">
+                        Upgrade to Premium
+                    </a>
+                    
+                    <div id="premium-badge" class="hidden mt-2 inline-block bg-amber-500/10 text-amber-400 font-bold py-2 px-4 rounded-lg border border-amber-500/30 shadow-lg tracking-wide">
+                        👑 Premium Active
+                    </div>
+                </div>
+                
+                <div class="my-6 flex items-center">
+                    <div class="flex-grow border-t border-gray-600"></div>
+                    <span class="flex-shrink mx-4 text-gray-400 text-sm">CREATE</span>
+                    <div class="flex-grow border-t border-gray-600"></div>
+                </div>
+                
+                <h2 class="text-xl font-semibold text-white mb-4">Create a New Session</h2>
+                <div id="upload-section">
+                    <input type="file" id="pdf-upload" accept=".pdf" class="hidden">
+                    <label for="pdf-upload" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-lg cursor-pointer transition duration-300 shadow-lg">
+                        Choose PDF
+                    </label>
+                </div>
+                
+                <div id="upload-progress-section" class="hidden mt-6">
+                    <p class="mb-2 text-gray-200">Uploading...</p>
+                    <div class="w-full bg-gray-700 rounded-full h-4">
+                        <div id="progress-bar" class="bg-amber-500 h-4 rounded-full" style="width: 0%"></div>
+                    </div>
+                    <p id="progress-text" class="text-sm mt-1 text-gray-300">0%</p>
+                </div>
+
+                <div id="links-section" class="hidden mt-8 text-left bg-gray-800/50 p-6 rounded-lg">
+                    <h2 class="text-2xl font-bold text-center text-white mb-4">Your Session is Ready!</h2>
+                    <div class="mb-4 text-center">
+                        <label class="font-semibold text-gray-200">Your Session Code:</label>
+                        <p id="session-code-display" class="text-3xl font-bold text-amber-400 tracking-widest mt-1"></p>
+                    </div>
+                    <div class="mb-4">
+                        <label class="font-semibold text-gray-200">Presenter Link:</label>
+                        <input id="presenter-link" type="text" readonly class="w-full bg-gray-700 text-white p-2 mt-1 rounded border border-gray-600">
+                    </div>
+                    <div class="mb-6">
+                        <label class="font-semibold text-gray-200">Remote Link:</label>
+                        <input id="remote-link" type="text" readonly class="w-full bg-gray-700 text-white p-2 mt-1 rounded border border-gray-600">
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-4 mb-4">
+                        <button id="copy-links-btn" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition">Copy Info</button>
+                        <button id="show-qr-btn" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition">Show QR Codes</button>
+                    </div>
+                    <p id="copy-success" class="text-green-400 text-center text-sm hidden">Session info copied to clipboard!</p>
+                    <div id="qr-code-section" class="hidden mt-6 pt-4 border-t border-gray-700">
+                        <h3 class="text-lg font-bold text-center text-white mb-4">Scan for Quick Access</h3>
+                        <div class="flex justify-around items-center">
+                            <div class="text-center">
+                                <p class="font-semibold text-gray-200">Presenter</p>
+                                <div id="qr-presenter" class="p-2 bg-white inline-block rounded-lg mt-2"></div>
+                            </div>
+                            <div class="text-center">
+                                <p class="font-semibold text-gray-200">Remote</p>
+                                <div id="qr-remote" class="p-2 bg-white inline-block rounded-lg mt-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <p id="expiry-message" class="text-sm text-gray-400 text-center mt-4"></p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="w-full text-center p-4">
+        <div class="flex justify-center gap-x-4 gap-y-2 flex-wrap mb-2 text-xs">
+            <a href="./terms.html" class="text-gray-400 hover:text-amber-400 hover:underline">Terms & Conditions</a>
+            <span class="text-gray-500 hidden sm:inline">|</span>
+            <a href="./privacy.html" class="text-gray-400 hover:text-amber-400 hover:underline">Privacy Policy</a>
+            <span class="text-gray-500 hidden sm:inline">|</span>
+            <a href="./refunds.html" class="text-gray-400 hover:text-amber-400 hover:underline">Cancellation & Refunds</a>
+            <span class="text-gray-500 hidden sm:inline">|</span>
+            <a href="./shipping.html" class="text-gray-400 hover:text-amber-400 hover:underline">Shipping Policy</a>
+            <span class="text-gray-500 hidden sm:inline">|</span>
+            <a href="./contact.html" class="text-gray-400 hover:text-amber-400 hover:underline">Contact Us</a>
+        </div>
+        <p class="text-xs text-gray-500">© 2025 Yellapu Sampreeth Naidu. All Rights Reserved.</p>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getDatabase } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+        import { 
+            getAuth, 
+            GoogleAuthProvider, 
+            signInWithPopup, 
+            signOut, 
+            onAuthStateChanged,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            updateProfile,
+            getAdditionalUserInfo
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+        import { 
+            getFirestore, collection, addDoc, serverTimestamp, 
+            query, where, getDocs, limit, doc, setDoc, getDoc
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCtlgsNhCEsKLHA-WmfoqQleW_n2kCQerI",
+            authDomain: "slidechangeronline.firebaseapp.com",
+            projectId: "slidechangeronline",
+            storageBucket: "slidechangeronline.firebasestorage.app",
+            messagingSenderId: "1013262596418",
+            appId: "1:1013262596418:web:b7c9ee7e6da7545ff370db",
+            databaseURL: "https://slidechangeronline-default-rtdb.asia-southeast1.firebasedatabase.app/"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const storage = getStorage(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+        const rtdb = getDatabase(app);
+        
+        const authSection = document.getElementById('auth-section');
+        const loggedInSection = document.getElementById('logged-in-section');
+        const logoutBtn = document.getElementById('logout-btn');
+        const userName = document.getElementById('user-name');
+        
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const showRegisterBtn = document.getElementById('show-register-btn');
+        const showLoginBtn = document.getElementById('show-login-btn');
+        const authError = document.getElementById('auth-error');
+
+        const loginGoogleBtn = document.getElementById('login-google-btn');
+        const loginEmailBtn = document.getElementById('login-email-btn');
+        const registerEmailBtn = document.getElementById('register-email-btn');
+        
+        const userTierDisplay = document.getElementById('user-tier-display');
+        const upgradeLinkIndex = document.getElementById('upgrade-link-index');
+        const premiumBadge = document.getElementById('premium-badge');
+
+        window.onload = () => {
+            const bgImage = new Image();
+            bgImage.src = 'Screenshot 2025-09-19 204654.png';
+            bgImage.onload = () => {
+                document.body.style.backgroundImage = `url('${bgImage.src}')`;
+            };
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            const joinSection = document.getElementById('join-with-code-section');
+            if (user) {
+                authSection.classList.add('hidden');
+                loggedInSection.classList.remove('hidden');
+                userName.textContent = user.displayName || user.email;
+
+                const userTier = await getUserTier(user.uid);
+                
+                if (userTier === 'premium') {
+                    userTierDisplay.textContent = 'PRO';
+                    userTierDisplay.className = 'font-bold tracking-wide text-amber-400';
+                    upgradeLinkIndex.classList.add('hidden');
+                    premiumBadge.classList.remove('hidden');
+                } else {
+                    userTierDisplay.textContent = 'Free';
+                    userTierDisplay.className = 'font-semibold text-gray-300';
+                    upgradeLinkIndex.classList.remove('hidden');
+                    premiumBadge.classList.add('hidden');
+                }
+
+            } else {
+                authSection.classList.remove('hidden');
+                loggedInSection.classList.add('hidden');
+                userName.textContent = '';
+            }
+        });
+        
+        showRegisterBtn.addEventListener('click', () => {
+            loginForm.classList.add('hidden');
+            registerForm.classList.remove('hidden');
+            authError.classList.add('hidden');
+        });
+
+        showLoginBtn.addEventListener('click', () => {
+            registerForm.classList.add('hidden');
+            loginForm.classList.remove('hidden');
+            authError.classList.add('hidden');
+        });
+
+        const spinner = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+
+        function setButtonLoading(button, isLoading) {
+            if (isLoading) {
+                button.disabled = true;
+                button.innerHTML = spinner + 'Processing...';
+            } else {
+                button.disabled = false;
+                if(button.id === 'login-email-btn') button.textContent = 'Sign In';
+                if(button.id === 'register-email-btn') button.textContent = 'Create Account';
+            }
+        }
+
+        loginGoogleBtn.addEventListener('click', () => signInWithPopup(auth, provider).then(handleNewUser).catch(handleAuthError));
+        logoutBtn.addEventListener('click', () => signOut(auth));
+        
+        registerEmailBtn.addEventListener('click', () => {
+            const name = document.getElementById('register-name').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            
+            if (!name) { handleAuthError({ code: 'auth/missing-name' }); return; }
+            setButtonLoading(registerEmailBtn, true);
+            
+            createUserWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    return updateProfile(userCredential.user, { displayName: name })
+                        .then(() => {
+                            createUserProfile(userCredential.user);
+                        });
+                })
+                .catch(handleAuthError)
+                .finally(() => setButtonLoading(registerEmailBtn, false));
+        });
+
+        loginEmailBtn.addEventListener('click', () => {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            setButtonLoading(loginEmailBtn, true);
+            signInWithEmailAndPassword(auth, email, password)
+                .catch(handleAuthError)
+                .finally(() => setButtonLoading(loginEmailBtn, false));
+        });
+
+        async function createUserProfile(user) {
+            const userRef = doc(db, "users", user.uid);
+            const userDoc = await getDoc(userRef);
+            if (!userDoc.exists()) {
+                await setDoc(userRef, {
+                    name: user.displayName, email: user.email,
+                    createdAt: serverTimestamp(), tier: "free"
+                });
+            }
+        }
+
+        function handleNewUser(result) {
+            const isNewUser = getAdditionalUserInfo(result).isNewUser;
+            if (isNewUser) {
+                createUserProfile(result.user);
+            }
+        }
+        
+        function handleAuthError(error) {
+            let message = "An unknown error occurred.";
+            switch (error.code) {
+                case 'auth/invalid-email': message = "Please enter a valid email address."; break;
+                case 'auth/user-not-found': message = "No account found with this email."; break;
+                case 'auth/wrong-password': message = "Incorrect password. Please try again."; break;
+                case 'auth/email-already-in-use': message = "An account with this email already exists."; break;
+                case 'auth/weak-password': message = "Password should be at least 6 characters long."; break;
+                case 'auth/missing-name': message = "Please enter your name."; break;
+                default: message = "An unexpected error occurred. Please try again."; break;
+            }
+            authError.textContent = message;
+            authError.classList.remove('hidden');
+        }
+
+        const pdfUpload = document.getElementById('pdf-upload');
+        const uploadProgressSection = document.getElementById('upload-progress-section');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const linksSection = document.getElementById('links-section');
+
+        const sessionCodeInput = document.getElementById('session-code-input');
+        const joinPresenterBtn = document.getElementById('join-presenter-btn');
+        const joinRemoteBtn = document.getElementById('join-remote-btn');
+        const joinError = document.getElementById('join-error');
+        const sessionCodeDisplay = document.getElementById('session-code-display');
+
+        pdfUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) uploadFile(file);
+        });
+        
+        joinPresenterBtn.addEventListener('click', () => joinSession('presenter'));
+        joinRemoteBtn.addEventListener('click', () => joinSession('remote'));
+
+        async function joinSession(type) {
+            const code = sessionCodeInput.value;
+            if (code.length !== 8) {
+                joinError.textContent = "Please enter a valid 8-digit code.";
+                joinError.classList.remove('hidden');
+                return;
+            }
+            
+            joinError.classList.add('hidden');
+            const presentationsRef = collection(db, "presentations");
+            const q = query(presentationsRef, where("sessionCode", "==", code), limit(1));
+            try {
+                const querySnapshot = await getDocs(q);
+                if (querySnapshot.empty) {
+                    joinError.textContent = "Invalid or expired code. Please try again.";
+                    joinError.classList.remove('hidden');
+                } else {
+                    const doc = querySnapshot.docs[0];
+                    const id = doc.id;
+                    const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '');
+                    window.location.href = `${baseUrl}${type}.html?id=${id}`;
+                }
+            } catch (error) {
+                console.error("Error finding session:", error);
+                joinError.textContent = "An error occurred. Please try again.";
+                joinError.classList.remove('hidden');
+            }
+        }
+
+        async function getUserTier(userId) {
+            if (!userId) return "free";
+            const userRef = doc(db, "users", userId);
+            const userDoc = await getDoc(userRef);
+            return userDoc.exists() ? userDoc.data().tier || userDoc.data().accountTier || "free" : "free";
+        }
+
+        async function uploadFile(file) {
+            const user = auth.currentUser;
+            if (!user) { alert("You must be logged in to upload a file."); return; }
+
+            const userTier = await getUserTier(user.uid);
+            
+            // STRICT ENFORCEMENT: 20MB for Free, 100MB for Premium
+            const sizeLimitMB = userTier === "premium" ? 100 : 20;
+            const sizeLimitBytes = sizeLimitMB * 1024 * 1024;
+
+            if (file.size > sizeLimitBytes) {
+                alert(`File is too large. Your limit is ${sizeLimitMB}MB. Please upgrade for larger files.`);
+                return;
+            }
+
+            const filePath = `uploads/${user.uid}/${Date.now()}-${file.name}`;
+            const storageRef = ref(storage, filePath);
+            const uploadTask = uploadBytesResumable(storageRef, file);
+
+            uploadProgressSection.classList.remove('hidden');
+            linksSection.classList.add('hidden');
+
+            uploadTask.on('state_changed', 
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    progressBar.style.width = progress + '%';
+                    progressText.textContent = Math.round(progress) + '%';
+                }, 
+                (error) => {
+                    console.error("Upload failed:", error);
+                    alert("Upload failed. Please try again.");
+                    uploadProgressSection.classList.add('hidden');
+                }, 
+                () => {
+                    getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                        createPresentationSession(downloadURL, file.name, userTier);
+                    });
+                }
+            );
+        }
+
+        async function createPresentationSession(fileUrl, fileName, userTier) {
+            const user = auth.currentUser;
+            if (!user) return;
+            const sessionCode = Math.floor(10000000 + Math.random() * 90000000).toString();
+            
+            // STRICT ENFORCEMENT: 4 Hours for Free, 18 Hours for Premium
+            const expiryHours = userTier === "premium" ? 18 : 4;
+            const expiresAt = new Date(Date.now() + expiryHours * 60 * 60 * 1000);
+
+            try {
+                const sessionData = {
+                    userId: user.uid, fileUrl, currentPage: 1,
+                    createdAt: serverTimestamp(), expiresAt, sessionCode 
+                };
+                const docRef = await addDoc(collection(db, "presentations"), sessionData);
+
+                const historyData = {
+                    userId: user.uid, fileName, sessionCode,
+                    uploadedAt: serverTimestamp(), presentationId: docRef.id
+                };
+                await addDoc(collection(db, "history"), historyData);
+                displayLinks(docRef.id, sessionCode, expiryHours);
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                alert("Failed to create session. Please try again.");
+            }
+        }
+        
+        function displayLinks(id, sessionCode, expiryHours) {
+            const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '');
+            const presenterLinkInput = document.getElementById('presenter-link');
+            const remoteLinkInput = document.getElementById('remote-link');
+            const copyLinksBtn = document.getElementById('copy-links-btn');
+            const showQrBtn = document.getElementById('show-qr-btn');
+            const qrCodeSection = document.getElementById('qr-code-section');
+            const copySuccess = document.getElementById('copy-success');
+            const expiryMessage = document.getElementById('expiry-message');
+
+            const presenterUrl = `${baseUrl}presenter.html?id=${id}`;
+            const remoteUrl = `${baseUrl}remote.html?id=${id}`;
+
+            presenterLinkInput.value = presenterUrl;
+            remoteLinkInput.value = remoteUrl;
+            sessionCodeDisplay.textContent = sessionCode;
+            expiryMessage.textContent = `This session will expire in ${expiryHours} hours.`;
+            
+            uploadProgressSection.classList.add('hidden');
+            linksSection.classList.remove('hidden');
+            
+            copyLinksBtn.addEventListener('click', () => {
+                const textToCopy = `Session Code: ${sessionCode}\n\nPresenter Link: ${presenterUrl}\nRemote Link: ${remoteUrl}`;
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    copySuccess.classList.remove('hidden');
+                    setTimeout(() => copySuccess.classList.add('hidden'), 2000);
+                });
+            });
+
+            showQrBtn.addEventListener('click', () => {
+                const qrPresenterDiv = document.getElementById('qr-presenter');
+                const qrRemoteDiv = document.getElementById('qr-remote');
+                qrPresenterDiv.innerHTML = '';
+                qrRemoteDiv.innerHTML = '';
+                new QRCode(qrPresenterDiv, { text: presenterUrl, width: 128, height: 128 });
+                new QRCode(qrRemoteDiv, { text: remoteUrl, width: 128, height: 128 });
+                qrCodeSection.classList.remove('hidden');
+            });
+        }
+    </script>
+</body>
+</html>

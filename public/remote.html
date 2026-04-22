@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Remote - SlideChangerOnline</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <style>
+        :root { --app-height: 100dvh; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #000; 
+            overflow: hidden; 
+            margin: 0; 
+            padding: 0; 
+            width: 100vw;
+            height: var(--app-height);
+        }
+        #remote-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: var(--app-height);
+        }
+        #slide-view {
+            position: relative;
+            flex-grow: 1;
+            background: #111;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            min-height: 0; 
+        }
+        #pdf-canvas {
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        #touch-layer {
+            position: absolute;
+            z-index: 10;
+            touch-action: none;
+            cursor: crosshair;
+        }
+        #local-ink-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            pointer-events: none;
+        }
+        #toolbar {
+            height: auto;
+            min-height: 160px;
+            background: #1f2937;
+            border-top: 1px solid #374151;
+            padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 20;
+            flex-shrink: 0;
+        }
+        .tool-btn {
+            padding: 10px;
+            background: #374151;
+            border-radius: 8px;
+            color: #d1d5db;
+            border: 2px solid transparent;
+            font-weight: 600;
+            text-align: center;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        .tool-btn.active {
+            border-color: #f59e0b;
+            background: #4b5563;
+            color: white;
+        }
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: #111827;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            transition: opacity 0.4s ease;
+            pointer-events: all; 
+        }
+        #loading-overlay.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+        #status-log {
+            color: #9ca3af;
+            font-size: 0.75rem;
+            margin-top: 1rem;
+            text-align: center;
+            max-width: 80%;
+            font-family: monospace;
+        }
+        .error-text { color: #f87171 !important; }
+        .cors-hint { margin-top: 10px; padding: 10px; background: #311; border-radius: 5px; font-size: 0.7rem; color: #fca5a5; border: 1px solid #722; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="limit-overlay" class="hidden fixed inset-0 bg-gray-900 z-[200] flex flex-col items-center justify-center p-6 text-center">
+        <h2 class="text-3xl font-bold text-red-500 mb-2">Session Full</h2>
+        <p id="limit-message" class="text-gray-300 mb-6">The maximum number of Remote Control connections for this tier has been reached.</p>
+        <a href="./index.html" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-lg transition">Return to Home</a>
+    </div>
+
+    <div id="loading-overlay">
+        <div id="loader-spinner" class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500 mb-4"></div>
+        <p class="text-white font-bold">SlideChanger Remote</p>
+        <div id="status-log">Authenticating connection...</div>
+        <div id="cors-fix" class="hidden cors-hint">
+            <strong>CORS ERROR DETECTED:</strong><br>
+            Your browser is blocking the PDF. Ensure you have run:<br>
+            <code>gsutil cors set cors.json gs://YOUR_BUCKET</code>
+        </div>
+    </div>
+
+    <div id="remote-wrapper">
+        <div id="slide-view">
+            <div id="touch-layer">
+                <canvas id="pdf-canvas"></canvas>
+                <canvas id="local-ink-canvas"></canvas>
+            </div>
+        </div>
+
+        <div id="toolbar">
+            <div class="grid grid-cols-4 gap-2">
+                <button class="tool-btn active" id="tool-pointer" data-mode="pointer">👆 Move</button>
+                <button class="tool-btn" id="tool-laser" data-mode="laser">🔴 Laser</button>
+                <button class="tool-btn" id="tool-pen" data-mode="pen">✏️ Pen</button>
+                <button class="tool-btn bg-red-900/50 text-red-200 border-red-800" id="tool-clear">🗑️ Clear</button>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 flex-grow">
+                <button id="prev-btn" class="bg-blue-600 hover:bg-blue-700 rounded-lg font-bold text-xl active:scale-95 transition-transform">PREV</button>
+                <div class="flex flex-col items-center justify-center bg-gray-900 rounded-lg border border-gray-700">
+                    <span id="page-indicator" class="text-[10px] font-mono text-gray-400 uppercase tracking-tighter">Syncing...</span>
+                    <span id="page-number" class="text-lg font-bold">1 / 1</span>
+                    <button id="refresh-btn" class="text-[10px] text-amber-500 hover:underline">RE-SYNC</button>
+                </div>
+                <button id="next-btn" class="bg-green-600 hover:bg-green-700 rounded-lg font-bold text-xl active:scale-95 transition-transform">NEXT</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, doc, getDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getDatabase, ref, get, set, push, onChildAdded, off, remove, onDisconnect, serverTimestamp as rtdbTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCtlgsNhCEsKLHA-WmfoqQleW_n2kCQerI",
+            authDomain: "slidechangeronline.firebaseapp.com",
+            projectId: "slidechangeronline",
+            storageBucket: "slidechangeronline.firebasestorage.app",
+            messagingSenderId: "1013262596418",
+            appId: "1:1013262596418:web:b7c9ee7e6da7545ff370db",
+            databaseURL: "https://slidechangeronline-default-rtdb.asia-southeast1.firebasedatabase.app/"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const rtdb = getDatabase(app);
+
+        const overlay = document.getElementById('loading-overlay');
+        const statusLog = document.getElementById('status-log');
+        const corsFix = document.getElementById('cors-fix');
+        const pdfCanvas = document.getElementById('pdf-canvas');
+        const pdfCtx = pdfCanvas.getContext('2d');
+        const inkCanvas = document.getElementById('local-ink-canvas');
+        const inkCtx = inkCanvas.getContext('2d');
+        const touchLayer = document.getElementById('touch-layer');
+        const toolBtns = document.querySelectorAll('.tool-btn');
+        const pageNumDisplay = document.getElementById('page-number');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const limitOverlay = document.getElementById('limit-overlay');
+
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
+
+        let pdfDoc = null;
+        let currentPageNum = 1;
+        let totalPages = 1;
+        let isRendering = false;
+        let currentMode = 'pointer';
+        let isDrawing = false;
+        let currentPath = [];
+        let currentDrawingsRef = null;
+
+        const params = new URLSearchParams(window.location.search);
+        const presentationId = params.get('id');
+
+        function updateStatus(msg, isError = false) {
+            statusLog.textContent = msg;
+            if (isError) {
+                statusLog.classList.add('error-text');
+                document.getElementById('loader-spinner').classList.add('hidden');
+                if (msg.toLowerCase().includes("cors") || msg.toLowerCase().includes("failed to fetch")) {
+                    corsFix.classList.remove('hidden');
+                }
+            }
+        }
+
+        async function initializeConnection() {
+            if (!presentationId) {
+                updateStatus("Error: Invalid URL (Missing ID).", true);
+                return;
+            }
+
+            try {
+                const docRef = doc(db, "presentations", presentationId);
+                const sessionSnap = await getDoc(docRef);
+                
+                if (!sessionSnap.exists()) {
+                    updateStatus("Error: Session not found.", true);
+                    return;
+                }
+                
+                const ownerId = sessionSnap.data().userId;
+                const ownerSnap = await getDoc(doc(db, "users", ownerId));
+                const ownerTier = ownerSnap.exists() ? (ownerSnap.data().tier || ownerSnap.data().accountTier || "free") : "free";
+                
+                // PRESENCE LOGIC: 5 Remotes for Premium, 1 for Free
+                const maxAllowed = ownerTier === "premium" ? 5 : 1; 
+                const presenceRef = ref(rtdb, `sessions/${presentationId}/presence/remotes`);
+                const presenceSnap = await get(presenceRef);
+                const currentCount = presenceSnap.exists() ? Object.keys(presenceSnap.val()).length : 0;
+                
+                if (currentCount >= maxAllowed) {
+                    limitOverlay.classList.remove('hidden');
+                    updateStatus("Connection Blocked: Limit Exceeded", true);
+                    return;
+                }
+                
+                // REGISTER ACTIVE CONNECTION
+                const myConnectionRef = push(presenceRef);
+                await onDisconnect(myConnectionRef).remove();
+                await set(myConnectionRef, { joinedAt: rtdbTimestamp() });
+
+                // START CORE LOGIC
+                startSessionListeners(docRef);
+
+            } catch (error) {
+                console.error(error);
+                updateStatus("Connection failed.", true);
+            }
+        }
+
+        function startSessionListeners(docRef) {
+            updateStatus("Handshaking Firestore...");
+            
+            const loadTimeout = setTimeout(() => {
+                if (!pdfDoc) updateStatus("Connection taking too long. Check Internet or CORS.", true);
+            }, 10000);
+
+            onSnapshot(docRef, (snap) => {
+                if (snap.exists()) {
+                    const data = snap.data();
+                    updateStatus("Fetching PDF from Storage...");
+                    
+                    if (!pdfDoc && data.fileUrl) {
+                        pdfjsLib.getDocument(data.fileUrl).promise.then(doc => {
+                            clearTimeout(loadTimeout);
+                            pdfDoc = doc;
+                            totalPages = doc.numPages;
+                            document.getElementById('page-indicator').textContent = "CONNECTED";
+                            
+                            overlay.classList.add('fade-out');
+                            setTimeout(() => overlay.classList.add('hidden'), 500);
+                            
+                            renderPage(data.currentPage || 1);
+                        }).catch(err => {
+                            clearTimeout(loadTimeout);
+                            updateStatus("PDF LOAD FAILED: Check CORS settings.", true);
+                        });
+                    } else if (pdfDoc && data.currentPage !== currentPageNum) {
+                        renderPage(data.currentPage);
+                    }
+                    pageNumDisplay.textContent = `${data.currentPage || 1} / ${totalPages}`;
+                }
+            }, (err) => {
+                updateStatus("Firestore Error: " + err.code, true);
+            });
+
+            toolBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    toolBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentMode = btn.dataset.mode;
+                });
+            });
+
+            document.getElementById('tool-clear').addEventListener('click', () => {
+                remove(ref(rtdb, `sessions/${presentationId}/drawings/${currentPageNum}`));
+                set(ref(rtdb, `sessions/${presentationId}/clearSignal`), { timestamp: Date.now() });
+                clearInk();
+            });
+
+            document.getElementById('refresh-btn').addEventListener('click', () => location.reload());
+
+            prevBtn.addEventListener('click', () => {
+                if (currentPageNum > 1) updateDoc(docRef, { currentPage: currentPageNum - 1 });
+            });
+            nextBtn.addEventListener('click', () => {
+                if (currentPageNum < totalPages) updateDoc(docRef, { currentPage: currentPageNum + 1 });
+            });
+
+            touchLayer.addEventListener('touchstart', handleStart, { passive: false });
+            touchLayer.addEventListener('touchmove', handleMove, { passive: false });
+            touchLayer.addEventListener('touchend', handleEnd);
+            touchLayer.addEventListener('mousedown', handleStart);
+            touchLayer.addEventListener('mousemove', handleMove);
+            window.addEventListener('mouseup', handleEnd);
+        }
+
+        async function renderPage(num) {
+            if (!pdfDoc || isRendering) return;
+            isRendering = true;
+
+            try {
+                const page = await pdfDoc.getPage(num);
+                const viewport = page.getViewport({ scale: 1 });
+                const wrapper = document.getElementById('slide-view');
+                
+                const wWidth = wrapper.clientWidth || window.innerWidth;
+                const wHeight = wrapper.clientHeight || (window.innerHeight - 160);
+
+                const scale = Math.min(wWidth / viewport.width, wHeight / viewport.height);
+                const scaledViewport = page.getViewport({ scale: scale || 1 });
+
+                const width = Math.floor(scaledViewport.width);
+                const height = Math.floor(scaledViewport.height);
+
+                pdfCanvas.width = width;
+                pdfCanvas.height = height;
+                inkCanvas.width = width;
+                inkCanvas.height = height;
+                
+                touchLayer.style.width = `${width}px`;
+                touchLayer.style.height = `${height}px`;
+
+                await page.render({ canvasContext: pdfCtx, viewport: scaledViewport }).promise;
+                currentPageNum = num;
+                clearInk();
+                attachInkListener(num);
+            } catch (err) {
+                console.error("Render error:", err);
+            } finally {
+                isRendering = false;
+            }
+        }
+
+        function clearInk() { inkCtx.clearRect(0, 0, inkCanvas.width, inkCanvas.height); }
+
+        function drawStroke(stroke) {
+            if (!stroke || !stroke.points || stroke.points.length < 2) return;
+            inkCtx.beginPath();
+            inkCtx.strokeStyle = stroke.color || "red";
+            inkCtx.lineWidth = stroke.width || 4;
+            inkCtx.lineCap = "round";
+            inkCtx.lineJoin = "round";
+            const w = inkCanvas.width;
+            const h = inkCanvas.height;
+            inkCtx.moveTo(stroke.points[0].x * w, stroke.points[0].y * h);
+            stroke.points.forEach(p => inkCtx.lineTo(p.x * w, p.y * h));
+            inkCtx.stroke();
+        }
+
+        function attachInkListener(num) {
+            if (currentDrawingsRef) off(currentDrawingsRef);
+            currentDrawingsRef = ref(rtdb, `sessions/${presentationId}/drawings/${num}`);
+            onChildAdded(currentDrawingsRef, (snap) => drawStroke(snap.val()));
+        }
+
+        function getNormalizedCoords(e) {
+            const rect = touchLayer.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            let x = (clientX - rect.left) / rect.width;
+            let y = (clientY - rect.top) / rect.height;
+            return { x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) };
+        }
+
+        const handleStart = (e) => {
+            if (currentMode === 'pointer') return;
+            e.preventDefault();
+            isDrawing = true;
+            const coords = getNormalizedCoords(e);
+            if (currentMode === 'laser') updateLaser(coords, true);
+            else if (currentMode === 'pen') currentPath = [coords];
+        };
+
+        const handleMove = (e) => {
+            if (!isDrawing) return;
+            const coords = getNormalizedCoords(e);
+            if (currentMode === 'laser') updateLaser(coords, true);
+            else if (currentMode === 'pen') {
+                const lastPoint = currentPath[currentPath.length - 1];
+                drawStroke({ points: [lastPoint, coords], color: "red", width: 4 });
+                currentPath.push(coords);
+            }
+        };
+
+        const handleEnd = () => {
+            if (!isDrawing) return;
+            isDrawing = false;
+            if (currentMode === 'laser') updateLaser({ x: 0, y: 0 }, false);
+            else if (currentMode === 'pen' && currentPath.length > 1) {
+                push(ref(rtdb, `sessions/${presentationId}/drawings/${currentPageNum}`), {
+                    points: currentPath, color: "red", width: 4, timestamp: Date.now()
+                });
+            }
+            currentPath = [];
+        };
+
+        function updateLaser(coords, active) {
+            set(ref(rtdb, `sessions/${presentationId}/laser`), {
+                x: coords.x, y: coords.y, active: active, timestamp: Date.now()
+            });
+        }
+
+        // BOOT
+        initializeConnection();
+
+    </script>
+</body>
+</html>

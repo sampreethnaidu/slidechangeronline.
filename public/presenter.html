@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Presenter - SlideChangerOnline</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #000; overflow: hidden; margin: 0; padding: 0; width: 100vw; height: 100vh; }
+        #presenter-wrapper {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #111;
+        }
+        #canvas-container {
+            position: relative;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            background: #fff;
+        }
+        #pdf-canvas { display: block; z-index: 1; }
+        #annotation-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            pointer-events: none;
+        }
+        #laser-point {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: radial-gradient(circle, rgba(255,0,0,1) 0%, rgba(255,0,0,0) 70%);
+            border-radius: 50%;
+            box-shadow: 0 0 15px 5px rgba(255, 0, 0, 0.8);
+            z-index: 10;
+            pointer-events: none;
+            display: none;
+            transform: translate(-50%, -50%);
+            transition: left 0.08s linear, top 0.08s linear;
+        }
+        .ui-overlay {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+            opacity: 0.3;
+            transition: opacity 0.3s;
+        }
+        .ui-overlay:hover { opacity: 1; }
+        .control-btn {
+            background: rgba(31, 41, 55, 0.8);
+            color: white;
+            padding: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="limit-overlay" class="hidden fixed inset-0 bg-gray-900 z-[200] flex flex-col items-center justify-center p-6 text-center">
+        <h2 class="text-3xl font-bold text-red-500 mb-2">Session Full</h2>
+        <p id="limit-message" class="text-gray-300 mb-6">The maximum number of Presenter connections for this tier has been reached.</p>
+        <a href="./index.html" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-lg transition">Return to Home</a>
+    </div>
+
+    <div id="presenter-wrapper">
+        <div id="canvas-container">
+            <canvas id="pdf-canvas"></canvas>
+            <canvas id="annotation-canvas"></canvas>
+            <div id="laser-point"></div>
+        </div>
+    </div>
+
+    <div class="ui-overlay">
+        <button id="fullscreen-btn" class="control-btn" title="Toggle Fullscreen">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
+        </button>
+    </div>
+
+    <div id="status-message" class="fixed top-4 left-4 text-white text-xs bg-black/50 px-3 py-1 rounded z-50">Connecting...</div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, doc, getDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getDatabase, ref, get, set, push, onValue, onChildAdded, off, onDisconnect, serverTimestamp as rtdbTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCtlgsNhCEsKLHA-WmfoqQleW_n2kCQerI",
+            authDomain: "slidechangeronline.firebaseapp.com",
+            projectId: "slidechangeronline",
+            storageBucket: "slidechangeronline.firebasestorage.app",
+            messagingSenderId: "1013262596418",
+            appId: "1:1013262596418:web:b7c9ee7e6da7545ff370db",
+            databaseURL: "https://slidechangeronline-default-rtdb.asia-southeast1.firebasedatabase.app/"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const rtdb = getDatabase(app);
+
+        const container = document.getElementById('canvas-container');
+        const pdfCanvas = document.getElementById('pdf-canvas');
+        const pdfCtx = pdfCanvas.getContext('2d');
+        const annCanvas = document.getElementById('annotation-canvas');
+        const annCtx = annCanvas.getContext('2d');
+        const laser = document.getElementById('laser-point');
+        const statusMsg = document.getElementById('status-message');
+        const fsBtn = document.getElementById('fullscreen-btn');
+        const limitOverlay = document.getElementById('limit-overlay');
+
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
+
+        let pdfDoc = null;
+        let currentPageNum = 1;
+        let totalPages = 1;
+        let isRendering = false;
+        let currentDrawingsRef = null;
+
+        const params = new URLSearchParams(window.location.search);
+        const presentationId = params.get('id');
+
+        async function requestWakeLock() {
+            try { await navigator.wakeLock.request('screen'); } catch (err) {}
+        }
+
+        async function initializeConnection() {
+            if (!presentationId) {
+                statusMsg.textContent = "Error: Invalid URL (Missing ID).";
+                return;
+            }
+
+            statusMsg.textContent = "Verifying Limits...";
+            try {
+                const docRef = doc(db, "presentations", presentationId);
+                const sessionSnap = await getDoc(docRef);
+                
+                if (!sessionSnap.exists()) {
+                    statusMsg.textContent = "Error: Session not found.";
+                    return;
+                }
+                
+                const ownerId = sessionSnap.data().userId;
+                const ownerSnap = await getDoc(doc(db, "users", ownerId));
+                const ownerTier = ownerSnap.exists() ? (ownerSnap.data().tier || ownerSnap.data().accountTier || "free") : "free";
+                
+                // PRESENCE LOGIC: 20 Presenters for Premium, 1 for Free
+                const maxAllowed = ownerTier === "premium" ? 20 : 1; 
+                const presenceRef = ref(rtdb, `sessions/${presentationId}/presence/presenters`);
+                const presenceSnap = await get(presenceRef);
+                const currentCount = presenceSnap.exists() ? Object.keys(presenceSnap.val()).length : 0;
+                
+                if (currentCount >= maxAllowed) {
+                    limitOverlay.classList.remove('hidden');
+                    statusMsg.textContent = "Connection Blocked";
+                    return;
+                }
+                
+                // REGISTER ACTIVE CONNECTION
+                const myConnectionRef = push(presenceRef);
+                await onDisconnect(myConnectionRef).remove();
+                await set(myConnectionRef, { joinedAt: rtdbTimestamp() });
+
+                // START CORE LOGIC
+                requestWakeLock();
+                startSessionListeners(docRef);
+
+            } catch (error) {
+                console.error(error);
+                statusMsg.textContent = "Connection failed.";
+            }
+        }
+
+        function startSessionListeners(docRef) {
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (!pdfDoc && data.fileUrl) {
+                        pdfjsLib.getDocument(data.fileUrl).promise.then(doc => {
+                            pdfDoc = doc;
+                            totalPages = doc.numPages;
+                            renderPage(data.currentPage || 1);
+                        });
+                    } else if (pdfDoc && data.currentPage !== currentPageNum) {
+                        renderPage(data.currentPage);
+                    }
+                }
+            });
+
+            onValue(ref(rtdb, `sessions/${presentationId}/laser`), (snapshot) => {
+                const data = snapshot.val();
+                if (data && data.active) {
+                    laser.style.display = 'block';
+                    laser.style.left = `${data.x * 100}%`;
+                    laser.style.top = `${data.y * 100}%`;
+                } else {
+                    laser.style.display = 'none';
+                }
+            });
+
+            onValue(ref(rtdb, `sessions/${presentationId}/clearSignal`), (snapshot) => {
+                if (snapshot.exists()) clearAnnotations();
+            });
+
+            onValue(ref(rtdb, `sessions/${presentationId}/refreshSignal`), (snapshot) => {
+                if (snapshot.exists()) {
+                    clearAnnotations();
+                    attachRealtimeInkListener(currentPageNum);
+                }
+            });
+        }
+
+        async function renderPage(num) {
+            if (!pdfDoc || isRendering) return;
+            isRendering = true;
+            statusMsg.textContent = `Rendering page ${num}...`;
+
+            try {
+                const page = await pdfDoc.getPage(num);
+                const viewport = page.getViewport({ scale: 1 });
+                const scale = Math.min(window.innerWidth / viewport.width, window.innerHeight / viewport.height) * 0.99;
+                const scaledViewport = page.getViewport({ scale });
+
+                const width = Math.floor(scaledViewport.width);
+                const height = Math.floor(scaledViewport.height);
+
+                pdfCanvas.width = width;
+                pdfCanvas.height = height;
+                annCanvas.width = width;
+                annCanvas.height = height;
+                
+                container.style.width = `${width}px`;
+                container.style.height = `${height}px`;
+
+                await page.render({ canvasContext: pdfCtx, viewport: scaledViewport }).promise;
+                currentPageNum = num;
+                statusMsg.textContent = `Live: Page ${num} / ${totalPages}`;
+                
+                clearAnnotations();
+                attachRealtimeInkListener(num);
+            } catch (err) {
+                console.error("Render error:", err);
+            } finally {
+                isRendering = false;
+            }
+        }
+
+        function clearAnnotations() { annCtx.clearRect(0, 0, annCanvas.width, annCanvas.height); }
+
+        function drawStroke(stroke) {
+            if (!stroke || !stroke.points || stroke.points.length < 2) return;
+            annCtx.beginPath();
+            annCtx.strokeStyle = stroke.color || "red";
+            annCtx.lineWidth = stroke.width || 4;
+            annCtx.lineCap = "round";
+            annCtx.lineJoin = "round";
+            const w = annCanvas.width;
+            const h = annCanvas.height;
+            annCtx.moveTo(stroke.points[0].x * w, stroke.points[0].y * h);
+            stroke.points.forEach(p => annCtx.lineTo(p.x * w, p.y * h));
+            annCtx.stroke();
+        }
+
+        function attachRealtimeInkListener(num) {
+            if (currentDrawingsRef) off(currentDrawingsRef);
+            currentDrawingsRef = ref(rtdb, `sessions/${presentationId}/drawings/${num}`);
+            onChildAdded(currentDrawingsRef, (snap) => drawStroke(snap.val()));
+        }
+
+        async function goToPage(num) {
+            if (num < 1 || num > totalPages || num === currentPageNum) return;
+            const docRef = doc(db, "presentations", presentationId);
+            await updateDoc(docRef, { currentPage: num });
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') {
+                goToPage(currentPageNum + 1);
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') {
+                goToPage(currentPageNum - 1);
+            }
+        });
+
+        fsBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+            else if (document.exitFullscreen) document.exitFullscreen();
+        });
+
+        window.addEventListener('resize', () => { if(pdfDoc) renderPage(currentPageNum); });
+
+        // BOOT
+        initializeConnection();
+
+    </script>
+</body>
+</html>
