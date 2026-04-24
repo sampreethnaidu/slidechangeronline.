@@ -89,6 +89,19 @@
         </div>
     </div>
 
+    <div id="ephemeral-ad-overlay" class="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] hidden w-[90%] max-w-[800px]">
+        <div class="bg-slate-900 border border-white/20 rounded-xl overflow-hidden shadow-2xl flex flex-col">
+            <div class="flex justify-between items-center bg-black/40 px-3 py-1 border-b border-white/10">
+                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Sponsored</span>
+                <button onclick="closeEphemeralAd()" class="text-white hover:text-amber-500 text-lg font-bold px-2 leading-none">&times;</button>
+            </div>
+            <a href="#" id="e-ad-link" target="_blank" class="h-20 sm:h-24 w-full flex items-center justify-center bg-slate-800">
+                <img id="e-ad-img-desktop" src="" class="hidden md:block h-full object-contain" alt="">
+                <img id="e-ad-img-mobile" src="" class="block md:hidden h-full object-contain" alt="">
+            </a>
+        </div>
+    </div>
+
     <div class="ui-overlay">
         <button id="fullscreen-btn" class="control-btn" title="Toggle Fullscreen">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -101,7 +114,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, doc, getDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, onSnapshot, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
         import { getDatabase, ref, get, set, push, onValue, onChildAdded, off, onDisconnect, serverTimestamp as rtdbTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
         const firebaseConfig = {
@@ -139,6 +152,44 @@
         const params = new URLSearchParams(window.location.search);
         const presentationId = params.get('id');
 
+        // ADN Ephemeral Variables
+        const AD_INTERVAL = 300000; // 5 min
+        const AD_DURATION = 10000;  // 10 sec
+
+        async function triggerEphemeralAd() {
+            const overlay = document.getElementById('ephemeral-ad-overlay');
+            const link = document.getElementById('e-ad-link');
+            const imgD = document.getElementById('e-ad-img-desktop');
+            const imgM = document.getElementById('e-ad-img-mobile');
+
+            try {
+                const q = query(collection(db, "ads"), where("status", "==", "active"));
+                const snap = await getDocs(q);
+
+                if (!snap.empty) {
+                    const ads = [];
+                    snap.forEach(d => ads.push({ id: d.id, ...d.data() }));
+                    const ad = ads[Math.floor(Math.random() * ads.length)];
+
+                    link.href = ad.targetUrl;
+                    imgD.src = ad.desktopUrl;
+                    imgM.src = ad.mobileUrl;
+
+                    overlay.classList.remove('hidden');
+                    setTimeout(() => { overlay.classList.add('hidden'); }, AD_DURATION);
+
+                    link.onclick = async (e) => {
+                        const adDocRef = doc(db, "ads", ad.id);
+                        await updateDoc(adDocRef, { clicks: (ad.clicks || 0) + 1 });
+                    };
+                }
+            } catch (e) { console.error("ADN Error:", e); }
+        }
+
+        window.closeEphemeralAd = () => {
+            document.getElementById('ephemeral-ad-overlay').classList.add('hidden');
+        };
+
         async function requestWakeLock() {
             try { await navigator.wakeLock.request('screen'); } catch (err) {}
         }
@@ -163,7 +214,6 @@
                 const ownerSnap = await getDoc(doc(db, "users", ownerId));
                 const ownerTier = ownerSnap.exists() ? (ownerSnap.data().tier || ownerSnap.data().accountTier || "free") : "free";
                 
-                // PRESENCE LOGIC: 20 Presenters for Premium, 1 for Free
                 const maxAllowed = ownerTier === "premium" ? 20 : 1; 
                 const presenceRef = ref(rtdb, `sessions/${presentationId}/presence/presenters`);
                 const presenceSnap = await get(presenceRef);
@@ -175,14 +225,18 @@
                     return;
                 }
                 
-                // REGISTER ACTIVE CONNECTION
                 const myConnectionRef = push(presenceRef);
                 await onDisconnect(myConnectionRef).remove();
                 await set(myConnectionRef, { joinedAt: rtdbTimestamp() });
 
-                // START CORE LOGIC
                 requestWakeLock();
                 startSessionListeners(docRef);
+
+                // Start AD Cycle
+                setTimeout(() => {
+                    triggerEphemeralAd();
+                    setInterval(triggerEphemeralAd, AD_INTERVAL);
+                }, 60000);
 
             } catch (error) {
                 console.error(error);
@@ -307,7 +361,6 @@
 
         window.addEventListener('resize', () => { if(pdfDoc) renderPage(currentPageNum); });
 
-        // BOOT
         initializeConnection();
 
     </script>
