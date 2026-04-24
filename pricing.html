@@ -91,6 +91,10 @@
         // --- PRODUCTION API URL ---
         const apiBaseUrl = "https://api-5jm4dxoyka-uc.a.run.app";
 
+        // --- PREMIUM PLAN CONFIGURATION ---
+        // CRITICAL: Replace the string below with your actual LIVE Plan ID from Razorpay
+        const PREMIUM_PLAN_ID = "plan_SgYpw6WI3SKFah"; 
+
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 try {
@@ -130,7 +134,14 @@
                 // 1. CALL THE RECURRING SUBSCRIPTION ENDPOINT
                 const response = await fetch(`${apiBaseUrl}/createRazorpaySubscription`, {
                     method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` 
+                    },
+                    body: JSON.stringify({ 
+                        planId: PREMIUM_PLAN_ID,
+                        subscriptionType: "premium"
+                    })
                 });
                 
                 if (!response.ok) {
@@ -142,7 +153,7 @@
                 
                 // 2. INITIALIZE RAZORPAY WITH SUBSCRIPTION_ID
                 const options = {
-                    key: "rzp_live_SgY96gVwH9BtSa", // Ensure this is your Live Key ID
+                    key: "rzp_live_SgY96gVwH9BtSa", 
                     name: "SlideChangerOnline",
                     description: "Premium Auto-Renewing Subscription",
                     subscription_id: subscriptionId, 
