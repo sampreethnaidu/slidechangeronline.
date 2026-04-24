@@ -149,7 +149,8 @@
                     throw new Error(errData.error || 'Server error occurred.');
                 }
                 
-                const { data: { subscriptionId } } = await response.json();
+                const responseData = await response.json();
+                const subscriptionId = responseData.subscriptionId;
                 
                 // 2. INITIALIZE RAZORPAY WITH SUBSCRIPTION_ID
                 const options = {

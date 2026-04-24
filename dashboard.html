@@ -24,82 +24,102 @@
         }
     </style>
 </head>
-<body class="flex flex-col min-h-screen p-4">
-    <main class="flex-grow flex items-center justify-center w-full">
-        <div class="container mx-auto max-w-5xl">
-            <div class="backdrop-blur-custom p-8 rounded-2xl shadow-2xl w-full text-white">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b border-gray-700 pb-4 gap-4">
-                    <div>
-                        <h1 class="text-3xl font-bold">Your Account</h1>
-                        <div id="subscription-status" class="mt-2 flex items-center gap-3">
-                            <p class="text-gray-400">
-                                Account Status: <span id="user-tier-display" class="font-semibold text-gray-300">Loading...</span>
-                            </p>
-                            <div id="premium-badge-dash" class="hidden bg-amber-500/10 text-amber-400 text-xs font-bold py-1 px-2 rounded border border-amber-500/30 tracking-wide">
-                                👑 PRO
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <a id="upgrade-link-dash" href="./pricing.html" class="hidden bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition shadow-lg">
-                            Upgrade to Premium
-                        </a>
-                        <a href="./index.html" class="text-amber-400 hover:text-amber-300 hover:underline">&larr; Back to Home</a>
-                    </div>
-                </div>
+<body class="flex flex-col min-h-screen">
 
-                <h2 class="text-2xl font-bold text-gray-200 mb-4">Upload History</h2>
-
-                <div id="loading-state" class="text-center text-gray-400 py-8">
-                    <p>Loading your history...</p>
-                </div>
-
-                <div id="logged-out-state" class="hidden text-center text-gray-400 py-8">
-                    <p>You must be signed in to view your dashboard.</p>
-                    <p class="mt-2 text-sm">Please go back to the <a href="./index.html" class="text-amber-400 hover:underline">home page</a> to sign in.</p>
-                </div>
-
-                <div id="history-table-section" class="hidden">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-700">
-                            <thead class="bg-gray-800/50">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">File Name</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Uploaded On</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Session Code</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Links</th>
-                                </tr>
-                            </thead>
-                            <tbody id="history-table-body" class="divide-y divide-gray-700">
-                                </tbody>
-                        </table>
-                    </div>
-                    <p id="no-history-message" class="hidden text-center text-gray-500 mt-8">You have no upload history yet.</p>
-                    <p id="history-limit-message" class="hidden text-center text-amber-500/70 text-sm mt-4 border-t border-gray-700 pt-4">Free tier is limited to showing the last 5 sessions.</p>
-                </div>
+    <div id="global-ad-container" class="w-full bg-slate-900 border-b border-white/10 overflow-hidden hidden z-30" style="height: 40px;">
+        <div class="flex h-full w-full">
+            <div class="flex-grow flex items-center justify-center overflow-hidden px-4" id="ad-slot">
+                <a href="#" id="ad-link" target="_blank" class="w-full h-full flex items-center justify-center">
+                    <img id="ad-img-desktop" src="" class="hidden md:block h-full object-contain" alt="">
+                    <img id="ad-img-mobile" src="" class="block md:hidden h-full object-contain" alt="">
+                    <span id="ad-placeholder-text" class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">SlideChanger Ad Network</span>
+                </a>
+            </div>
+            <div class="flex-none bg-amber-600 hover:bg-amber-500 transition-colors border-l border-white/10">
+                <a href="./ad-manager.html" class="h-full px-4 flex items-center justify-center text-[10px] font-bold text-white uppercase tracking-tighter text-center leading-none">
+                    Ad Here
+                </a>
             </div>
         </div>
-    </main>
+    </div>
 
-    <footer class="w-full text-center p-4">
-         <div class="flex justify-center gap-x-4 gap-y-2 flex-wrap mb-2 text-xs">
-            <a href="./terms.html" class="text-gray-400 hover:text-amber-400 hover:underline">Terms & Conditions</a>
-            <span class="text-gray-500 hidden sm:inline">|</span>
-            <a href="./privacy.html" class="text-gray-400 hover:text-amber-400 hover:underline">Privacy Policy</a>
-            <span class="text-gray-500 hidden sm:inline">|</span>
-            <a href="./refunds.html" class="text-gray-400 hover:text-amber-400 hover:underline">Cancellation & Refunds</a>
-            <span class="text-gray-500 hidden sm:inline">|</span>
-            <a href="./shipping.html" class="text-gray-400 hover:text-amber-400 hover:underline">Shipping Policy</a>
-            <span class="text-gray-500 hidden sm:inline">|</span>
-            <a href="./contact.html" class="text-gray-400 hover:text-amber-400 hover:underline">Contact Us</a>
-        </div>
-        <p class="text-xs text-gray-500">© 2025 Yellapu Sampreeth Naidu. All Rights Reserved.</p>
-    </footer>
+    <div class="flex-grow flex flex-col p-4">
+        <main class="flex-grow flex items-center justify-center w-full">
+            <div class="container mx-auto max-w-5xl">
+                <div class="backdrop-blur-custom p-8 rounded-2xl shadow-2xl w-full text-white">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b border-gray-700 pb-4 gap-4">
+                        <div>
+                            <h1 class="text-3xl font-bold">Your Account</h1>
+                            <div id="subscription-status" class="mt-2 flex items-center gap-3">
+                                <p class="text-gray-400">
+                                    Account Status: <span id="user-tier-display" class="font-semibold text-gray-300">Loading...</span>
+                                </p>
+                                <div id="premium-badge-dash" class="hidden bg-amber-500/10 text-amber-400 text-xs font-bold py-1 px-2 rounded border border-amber-500/30 tracking-wide">
+                                    👑 PRO
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <a id="upgrade-link-dash" href="./pricing.html" class="hidden bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition shadow-lg">
+                                Upgrade to Premium
+                            </a>
+                            <a href="./index.html" class="text-amber-400 hover:text-amber-300 hover:underline">&larr; Back to Home</a>
+                        </div>
+                    </div>
+
+                    <h2 class="text-2xl font-bold text-gray-200 mb-4">Upload History</h2>
+
+                    <div id="loading-state" class="text-center text-gray-400 py-8">
+                        <p>Loading your history...</p>
+                    </div>
+
+                    <div id="logged-out-state" class="hidden text-center text-gray-400 py-8">
+                        <p>You must be signed in to view your dashboard.</p>
+                        <p class="mt-2 text-sm">Please go back to the <a href="./index.html" class="text-amber-400 hover:underline">home page</a> to sign in.</p>
+                    </div>
+
+                    <div id="history-table-section" class="hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-700">
+                                <thead class="bg-gray-800/50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">File Name</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Uploaded On</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Session Code</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Links</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-table-body" class="divide-y divide-gray-700">
+                                    </tbody>
+                            </table>
+                        </div>
+                        <p id="no-history-message" class="hidden text-center text-gray-500 mt-8">You have no upload history yet.</p>
+                        <p id="history-limit-message" class="hidden text-center text-amber-500/70 text-sm mt-4 border-t border-gray-700 pt-4">Free tier is limited to showing the last 5 sessions.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="w-full text-center p-4">
+             <div class="flex justify-center gap-x-4 gap-y-2 flex-wrap mb-2 text-xs">
+                <a href="./terms.html" class="text-gray-400 hover:text-amber-400 hover:underline">Terms & Conditions</a>
+                <span class="text-gray-500 hidden sm:inline">|</span>
+                <a href="./privacy.html" class="text-gray-400 hover:text-amber-400 hover:underline">Privacy Policy</a>
+                <span class="text-gray-500 hidden sm:inline">|</span>
+                <a href="./refunds.html" class="text-gray-400 hover:text-amber-400 hover:underline">Cancellation & Refunds</a>
+                <span class="text-gray-500 hidden sm:inline">|</span>
+                <a href="./shipping.html" class="text-gray-400 hover:text-amber-400 hover:underline">Shipping Policy</a>
+                <span class="text-gray-500 hidden sm:inline">|</span>
+                <a href="./contact.html" class="text-gray-400 hover:text-amber-400 hover:underline">Contact Us</a>
+            </div>
+            <p class="text-xs text-gray-500">© 2025 Yellapu Sampreeth Naidu. All Rights Reserved.</p>
+        </footer>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, collection, query, where, getDocs, orderBy, doc, getDoc, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, collection, query, where, getDocs, orderBy, doc, getDoc, limit, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCtlgsNhCEsKLHA-WmfoqQleW_n2kCQerI",
@@ -124,18 +144,55 @@
         const upgradeLinkDash = document.getElementById('upgrade-link-dash');
         const premiumBadgeDash = document.getElementById('premium-badge-dash');
 
+        // ADN Delivery Logic
+        async function loadRandomAd() {
+            const adContainer = document.getElementById('global-ad-container');
+            const adLink = document.getElementById('ad-link');
+            const adImgDesktop = document.getElementById('ad-img-desktop');
+            const adImgMobile = document.getElementById('ad-img-mobile');
+            const adPlaceholder = document.getElementById('ad-placeholder-text');
+
+            try {
+                const adsRef = collection(db, "ads");
+                const q = query(adsRef, where("status", "==", "active"));
+                const snapshot = await getDocs(q);
+
+                adContainer.classList.remove('hidden');
+
+                if (!snapshot.empty) {
+                    const ads = [];
+                    snapshot.forEach(doc => ads.push({ id: doc.id, ...doc.data() }));
+                    
+                    const selectedAd = ads[Math.floor(Math.random() * ads.length)];
+                    
+                    adLink.href = selectedAd.targetUrl;
+                    adImgDesktop.src = selectedAd.desktopUrl;
+                    adImgMobile.src = selectedAd.mobileUrl;
+                    adPlaceholder.classList.add('hidden');
+
+                    adLink.addEventListener('click', async () => {
+                        const adDocRef = doc(db, "ads", selectedAd.id);
+                        await updateDoc(adDocRef, { clicks: (selectedAd.clicks || 0) + 1 });
+                    });
+                }
+            } catch (err) {
+                console.error("ADN Error:", err);
+            }
+        }
+        loadRandomAd();
+
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 const userTier = await getUserTier(user.uid);
                 
-                // RECTIFIED: UI State Logic correctly hides the button for premium
                 if (userTier === 'premium') {
                     userTierDisplay.textContent = 'PRO';
                     userTierDisplay.className = 'font-bold tracking-wide text-amber-400';
-                    upgradeLinkDash.classList.add('hidden'); // Fix applied here
+                    upgradeLinkDash.classList.add('hidden');
                     premiumBadgeDash.classList.remove('hidden');
                 } else {
                     userTierDisplay.textContent = 'Free';
+                    userTierDisplay.className = 'font-semibold text-gray-300';
                     upgradeLinkDash.textContent = "Upgrade to Premium";
                     upgradeLinkDash.classList.remove('hidden');
                     premiumBadgeDash.classList.add('hidden');
